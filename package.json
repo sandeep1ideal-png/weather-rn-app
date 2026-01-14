@@ -1,0 +1,19 @@
+{
+  "name": "weather-rn-app",
+  "version": "1.0.0",
+  "description": "Full-stack weather application with Node.js backend and React Native mobile app",
+  "scripts": {
+    "backend": "cd backend && npm start",
+    "mobile": "cd mobile && npm start",
+    "install-all": "cd backend && npm install && cd ../mobile && npm install"
+  },
+  "keywords": [
+    "weather",
+    "react-native",
+    "expo",
+    "nodejs",
+    "express"
+  ],
+  "author": "",
+  "license": "MIT"
+}
