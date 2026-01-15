@@ -224,7 +224,7 @@ const styles = StyleSheet.create({
   splashImage: {
     width: "100%",
     height: "100%",
-    resizeMode: "contain",
+    resizeMode: "cover",
   },
   // ... (rest of your existing styles)
 });

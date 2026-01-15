@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "1weather-mobile",
-    "slug": "1weather-mobile",
+    "name": "weather-mobile",
+    "slug": "weather-mobile",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/foregroundImage.png",
@@ -9,7 +9,7 @@
     "splash": {
       "image": "./assets/splash.png",
       "resizeMode": "cover",
-      "backgroundColor": "#ffffff"
+      "backgroundColor": "#007AFF"
     },
     "assetBundlePatterns": [
       "**/*"
@@ -21,7 +21,7 @@
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/foregroundImage.png",
-        "backgroundColor": "#ffffff"
+        "backgroundColor": "#007AFF"
       },
       "package": "com.dwsandeep23.x1weathermobile"
     },
