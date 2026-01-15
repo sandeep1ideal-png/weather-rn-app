@@ -16,7 +16,7 @@ app.get('/weather', async (req, res) => {
     if (!city) {
       return res.status(400).json({ error: 'City parameter is required' });
     }
-
+console.log('process.env.OPENWEATHER_API_KEY',process.env.OPENWEATHER_API_KEY)
     if (!process.env.OPENWEATHER_API_KEY) {
       return res.status(500).json({ error: 'OpenWeather API key not configured' });
     }
@@ -51,6 +51,6 @@ app.get('/health', (req, res) => {
   res.json({ status: 'ok' });
 });
 
-app.listen(PORT, () => {
+app.listen(PORT,'0.0.0.0', () => {
   console.log(`Weather API server running on port ${PORT}`);
 });
