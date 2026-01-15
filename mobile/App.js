@@ -3,7 +3,7 @@ import { StyleSheet, Text, View, TextInput, TouchableOpacity, ActivityIndicator,
 import { StatusBar } from 'expo-status-bar';
 import axios from 'axios';
 
-const API_URL = 'http://localhost:3000';
+const API_URL = 'http://192.168.1.207:3000';
 
 export default function App() {
   const [city, setCity] = useState('');
@@ -20,16 +20,20 @@ export default function App() {
     setLoading(true);
     setError('');
     setWeather(null);
+    console.log('Fetching weather for:', API_URL);
 
     try {
       const response = await axios.get(`${API_URL}/weather`, {
         params: { city: city.trim() }
       });
+      
+      console.log(response.data);
       setWeather(response.data);
     } catch (err) {
       if (err.response) {
         setError(err.response.data.error || 'Failed to fetch weather data');
       } else if (err.request) {
+        console.log('Error request:', err);
         setError('Cannot connect to server. Make sure the backend is running.');
       } else {
         setError('An error occurred. Please try again.');
