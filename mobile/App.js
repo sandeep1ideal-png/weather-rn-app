@@ -1,48 +1,81 @@
-import React, { useState } from 'react';
-import { StyleSheet, Text, View, TextInput, TouchableOpacity, ActivityIndicator, Alert } from 'react-native';
-import { StatusBar } from 'expo-status-bar';
-import axios from 'axios';
+import React, { useState, useEffect } from "react";
+import { StyleSheet, Image } from "react-native";
+import {
+  Text,
+  View,
+  TextInput,
+  TouchableOpacity,
+  ActivityIndicator,
+  Alert,
+} from "react-native";
+import { StatusBar } from "expo-status-bar";
+import axios from "axios";
 
-const API_URL = 'http://192.168.1.207:3000';
+const API_URL = "http://192.168.1.207:3000";
+// ... (keep your existing imports)
+
+function SplashScreen({ onFinish }) {
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      onFinish();
+    }, 2000); // Show splash screen for 2 seconds
+
+    return () => clearTimeout(timer);
+  }, []);
+
+  return (
+    <View style={styles.splashContainer}>
+      <Image
+        source={require("./assets/splash.png")}
+        style={styles.splashImage}
+      />
+    </View>
+  );
+}
 
 export default function App() {
-  const [city, setCity] = useState('');
+  const [isLoading, setIsLoading] = useState(true);
+  // ... (keep your existing state)
+
+  const [city, setCity] = useState("");
   const [weather, setWeather] = useState(null);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
 
   const fetchWeather = async () => {
     if (!city.trim()) {
-      Alert.alert('Error', 'Please enter a city name');
+      Alert.alert("Error", "Please enter a city name");
       return;
     }
 
     setLoading(true);
-    setError('');
+    setError("");
     setWeather(null);
-    console.log('Fetching weather for:', API_URL);
+    console.log("Fetching weather for:", API_URL);
 
     try {
       const response = await axios.get(`${API_URL}/weather`, {
-        params: { city: city.trim() }
+        params: { city: city.trim() },
       });
-      
+
       console.log(response.data);
       setWeather(response.data);
     } catch (err) {
       if (err.response) {
-        setError(err.response.data.error || 'Failed to fetch weather data');
+        setError(err.response.data.error || "Failed to fetch weather data");
       } else if (err.request) {
-        console.log('Error request:', err);
-        setError('Cannot connect to server. Make sure the backend is running.');
+        console.log("Error request:", err);
+        setError("Cannot connect to server. Make sure the backend is running.");
       } else {
-        setError('An error occurred. Please try again.');
+        setError("An error occurred. Please try again.");
       }
     } finally {
       setLoading(false);
     }
   };
-
+  if (isLoading) {
+    return <SplashScreen onFinish={() => setIsLoading(false)} />;
+  }
   return (
     <View style={styles.container}>
       <StatusBar style="auto" />
@@ -65,7 +98,7 @@ export default function App() {
           disabled={loading}
         >
           <Text style={styles.buttonText}>
-            {loading ? 'Loading...' : 'Get Weather'}
+            {loading ? "Loading..." : "Get Weather"}
           </Text>
         </TouchableOpacity>
       </View>
@@ -83,7 +116,9 @@ export default function App() {
       {weather && !loading && (
         <View style={styles.weatherContainer}>
           <Text style={styles.cityName}>{weather.city}</Text>
-          <Text style={styles.temperature}>{Math.round(weather.temperature)}°C</Text>
+          <Text style={styles.temperature}>
+            {Math.round(weather.temperature)}°C
+          </Text>
           <Text style={styles.description}>{weather.description}</Text>
         </View>
       )}
@@ -94,43 +129,43 @@ export default function App() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
-    alignItems: 'center',
-    justifyContent: 'center',
+    backgroundColor: "#f5f5f5",
+    alignItems: "center",
+    justifyContent: "center",
     padding: 20,
   },
   title: {
     fontSize: 32,
-    fontWeight: 'bold',
+    fontWeight: "bold",
     marginBottom: 40,
-    color: '#333',
+    color: "#333",
   },
   inputContainer: {
-    width: '100%',
+    width: "100%",
     maxWidth: 400,
   },
   input: {
-    backgroundColor: '#fff',
+    backgroundColor: "#fff",
     padding: 15,
     borderRadius: 10,
     fontSize: 16,
     borderWidth: 1,
-    borderColor: '#ddd',
+    borderColor: "#ddd",
     marginBottom: 15,
   },
   button: {
-    backgroundColor: '#007AFF',
+    backgroundColor: "#007AFF",
     padding: 15,
     borderRadius: 10,
-    alignItems: 'center',
+    alignItems: "center",
   },
   buttonDisabled: {
-    backgroundColor: '#ccc',
+    backgroundColor: "#ccc",
   },
   buttonText: {
-    color: '#fff',
+    color: "#fff",
     fontSize: 18,
-    fontWeight: '600',
+    fontWeight: "600",
   },
   loader: {
     marginTop: 30,
@@ -138,45 +173,58 @@ const styles = StyleSheet.create({
   errorContainer: {
     marginTop: 20,
     padding: 15,
-    backgroundColor: '#ffebee',
+    backgroundColor: "#ffebee",
     borderRadius: 10,
-    width: '100%',
+    width: "100%",
     maxWidth: 400,
   },
   errorText: {
-    color: '#c62828',
+    color: "#c62828",
     fontSize: 16,
-    textAlign: 'center',
+    textAlign: "center",
   },
   weatherContainer: {
     marginTop: 30,
     padding: 30,
-    backgroundColor: '#fff',
+    backgroundColor: "#fff",
     borderRadius: 15,
-    alignItems: 'center',
-    shadowColor: '#000',
+    alignItems: "center",
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 3,
-    width: '100%',
+    width: "100%",
     maxWidth: 400,
   },
   cityName: {
     fontSize: 28,
-    fontWeight: 'bold',
-    color: '#333',
+    fontWeight: "bold",
+    color: "#333",
     marginBottom: 10,
   },
   temperature: {
     fontSize: 56,
-    fontWeight: 'bold',
-    color: '#007AFF',
+    fontWeight: "bold",
+    color: "#007AFF",
     marginVertical: 10,
   },
   description: {
     fontSize: 20,
-    color: '#666',
-    textTransform: 'capitalize',
+    color: "#666",
+    textTransform: "capitalize",
   },
+  // ... (keep your existing styles)
+  splashContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "#ffffff",
+  },
+  splashImage: {
+    width: "100%",
+    height: "100%",
+    resizeMode: "contain",
+  },
+  // ... (rest of your existing styles)
 });

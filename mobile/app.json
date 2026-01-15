@@ -1,27 +1,29 @@
 {
   "expo": {
-    "name": "weather-mobile",
-    "slug": "weather-mobile",
+    "name": "1weather-mobile",
+    "slug": "1weather-mobile",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/icon.png",
+    "icon": "./assets/foregroundImage.png",
     "userInterfaceStyle": "light",
     "splash": {
       "image": "./assets/splash.png",
-      "resizeMode": "contain",
+      "resizeMode": "cover",
       "backgroundColor": "#ffffff"
     },
     "assetBundlePatterns": [
       "**/*"
     ],
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.dwsandeep23.x1weathermobile"
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/adaptive-icon.png",
+        "foregroundImage": "./assets/foregroundImage.png",
         "backgroundColor": "#ffffff"
-      }
+      },
+      "package": "com.dwsandeep23.x1weathermobile"
     },
     "web": {
       "favicon": "./assets/favicon.png"
