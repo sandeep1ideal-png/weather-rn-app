@@ -15,5 +15,11 @@
     "express"
   ],
   "author": "",
-  "license": "MIT"
+  "license": "MIT",
+  "dependencies": {
+    "nativewind": "^4.2.1"
+  },
+  "devDependencies": {
+    "tailwindcss": "^3.3.2"
+  }
 }
