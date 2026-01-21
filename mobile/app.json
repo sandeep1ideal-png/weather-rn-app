@@ -1,32 +1,93 @@
 {
   "expo": {
-    "name": "weather-mobile",
-    "slug": "weather-mobile",
+    "name": "expo-nativewind",
+    "slug": "expo-nativewind",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/foregroundImage.png",
-    "userInterfaceStyle": "light",
-    "splash": {
-      "image": "./assets/splash.png",
-      "resizeMode": "cover",
-      "backgroundColor": "#007AFF"
-    },
-    "assetBundlePatterns": [
-      "**/*"
-    ],
+    "scheme": "exponativewind",
+    "userInterfaceStyle": "automatic",
+    "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.dwsandeep23.x1weathermobile"
+      "bundleIdentifier": "com.dwsandeep23.exponativewind",
+      "associatedDomains": ["applinks:yourapp.page.link"]
     },
     "android": {
       "adaptiveIcon": {
+        "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/foregroundImage.png",
-        "backgroundColor": "#007AFF"
+        "backgroundImage": "./assets/foregroundImage.png",
+        "monochromeImage": "./assets/foregroundImage.png"
       },
-      "package": "com.dwsandeep23.x1weathermobile"
+      "intentFilters": [
+        {
+          "action": "VIEW",
+          "autoVerify": true,
+          "data": [
+            {
+              "scheme": "exponativewind",
+              "host": "auth-callback"
+            }
+          ],
+          "category": ["BROWSABLE", "DEFAULT"]
+        },
+        {
+          "action": "VIEW",
+          "data": [
+            {
+              "scheme": "com.googleusercontent.apps.YOUR_GOOGLE_OAUTH_CLIENT_ID"
+            }
+          ],
+          "category": ["BROWSABLE", "DEFAULT"]
+        }
+      ],
+      "edgeToEdgeEnabled": true,
+      "predictiveBackGestureEnabled": false,
+      "package": "com.dwsandeep23.exponativewind"
     },
     "web": {
+      "bundler": "metro",
+      "output": "static",
       "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      "expo-router",
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/foregroundImage.png",
+          "imageWidth": 200,
+          "resizeMode": "contain",
+          "backgroundColor": "#ffffff",
+          "dark": {
+            "backgroundColor": "#000000"
+          }
+        }
+      ],
+      [
+        "expo-build-properties",
+        {
+          "ios": {
+            "useFrameworks": "static"
+          }
+        }
+      ]
+    ],
+    "experiments": {
+      "typedRoutes": true,
+      "reactCompiler": true
+    },
+    "extra": {
+      "eas": {
+        "projectId": "your-eas-project-id"
+      }
+    },
+    "updates": {
+      "url": "https://u.expo.dev/your-project-id"
+    },
+    "runtimeVersion": {
+      "policy": "sdkVersion"
     }
   }
 }

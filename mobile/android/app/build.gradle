@@ -87,9 +87,9 @@ android {
     buildToolsVersion rootProject.ext.buildToolsVersion
     compileSdk rootProject.ext.compileSdkVersion
 
-    namespace 'com.dwsandeep23.x1weathermobile'
+    namespace 'com.dwsandeep23.exponativewind'
     defaultConfig {
-        applicationId 'com.dwsandeep23.x1weathermobile'
+        applicationId 'com.dwsandeep23.exponativewind'
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1
