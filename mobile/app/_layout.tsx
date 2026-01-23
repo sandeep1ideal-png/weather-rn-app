@@ -1,23 +1,30 @@
 // app/_layout.tsx
-import { Stack, useRouter, useSegments } from 'expo-router';
-import { useEffect, useRef } from 'react';
+import { Redirect, Stack, useRouter, useSegments } from 'expo-router';
+import { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, View } from 'react-native';
 import { AuthProvider, useAuth } from '@/src/context/AuthContext';
+import { ThemeProvider } from '@/components/ThemeProvider';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import '@/global.css';
 import { supabase } from '@/lib/supabase';
 import * as Linking from 'expo-linking';
-import { ThemeProvider } from '@/components/ThemeProvider';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import SplashScreen from '@/components/Splash';
 
 function RootLayoutNav() {
-  const { userToken, isLoading } = useAuth();
+  const {  isLoading,setIsLoading,userToken } = useAuth();
   const segments = useSegments();
   const router = useRouter();
       const { signupUserData, signIn } = useAuth();
   const deepLinkProcessed = useRef(false);
 
+  const processed = useRef(true);
 
-  useEffect(() => {
+
+
+  // ✅ Get splash state and initial route
+
+   useEffect(() => {
     const handleDeepLink = async (url: string) => {
       // Prevent duplicate processing
       if (deepLinkProcessed.current && url.includes('auth-callback')) {
@@ -26,6 +33,7 @@ function RootLayoutNav() {
 
       if (url.includes('auth-callback')) {
         deepLinkProcessed.current = true;
+        setIsLoading(true)
 
         try {
           // Wait for Supabase to process the session from URL
@@ -50,13 +58,16 @@ function RootLayoutNav() {
 
 
             const { data: { session: verifySession }, error: verifyError } = await supabase.auth.getSession();
-            
 
             if (verifySession?.user) {
               checkVerification()
+            }else{
+              setIsLoading(false)
             }
 
         } catch (error) {
+                  setIsLoading(false)
+
           console.error('Deep link error:', error);
         }
       }
@@ -77,7 +88,7 @@ function RootLayoutNav() {
       .catch(err => console.error('Error getting initial URL:', err));
 
     return () => unsubscribe.remove();
-  }, [router,signupUserData]);
+  }, [router,signupUserData,userToken]);
 
   const checkVerification = async () => {
         const { error: profileError } = await supabase.from("profiles").insert({
@@ -95,56 +106,129 @@ function RootLayoutNav() {
   
         if (profileError) {
           alert(profileError.message);
+          setIsLoading(false)
         }else{
-
+          setIsLoading(false)
           await signIn(`${signupUserData}`);
         }
   
         if (profileError) {
           console.log(profileError);
           alert(profileError.message);
+          setIsLoading(false)
           return;
         }
     };
-useEffect(() => {
-  supabase.auth.getSession().then(({ data }) => {
-    if (data.session) {
-    }
-  });
 
-  supabase.auth.onAuthStateChange((event, session) => {
-    if (event === "SIGNED_IN") {
-    }
-  });
-}, []);
-
+  // ═════════════════════════════════════════════════════════════════════
+  // 3️⃣ HANDLE ALL AUTH STATE CHANGES
+  // ═════════════════════════════════════════════════════════════════════
   useEffect(() => {
-    if (isLoading) return;
-    const inAuthGroup = segments[0] === 'login' || segments[0] === 'signup';
-    const inTabsGroup = segments[0] === '(tabs)';
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        console.log('🔐 Auth event:::', event);
+
+        if (event === 'INITIAL_SESSION') {
+          // Already handled by useSessionRestore
+          return;
+        }
+
+        // ✅ SIGNED_IN - User logged in (login, signup, or deep link)
+        if (event === 'SIGNED_IN') {
+          console.log('✅ SIGNED_IN');
+
+          if (session?.user?.email_confirmed_at) {
+            console.log('✅ Email verified');
+
+            // Create profile from signup data
+            const signupData = await AsyncStorage.getItem('signupData');
+            if (signupData) {
+              const parsedData = JSON.parse(signupData);
+              // await createProfileFromSignupData(session.user, parsedData);
+              await AsyncStorage.removeItem('signupData');
+            }
+
+            router.replace('/(tabs)');
+          } else {
+            console.log('⏳ Email not verified');
+            // router.replace('/');
+          }
+        }
+
+        // ✅ USER_UPDATED - Email verified (deep link)
+        if (event === 'USER_UPDATED') {
+          console.log('🔄 USER_UPDATED');
+
+          if (session?.user?.email_confirmed_at) {
+            console.log('✅ Email verified');
+
+            const signupData = await AsyncStorage.getItem('signupData');
+            if (signupData) {
+              const parsedData = JSON.parse(signupData);
+              // await createProfileFromSignupData(session.user, parsedData);
+              await AsyncStorage.removeItem('signupData');
+            }
+
+            router.replace('/(tabs)');
+          }
+        }
+
+        // ✅ SIGNED_OUT - User logged out
+        if (event === 'SIGNED_OUT') {
+          console.log('❌ SIGNED_OUT');
+          deepLinkProcessed.current = false;
+          router.replace('/login');
+        }
+      }
+    );
+
+    return () => subscription?.unsubscribe();
+  }, []);
+
+
+  
+  
+return (
+    <>
+      {/* {isCheckingAuth && <SplashScreen />} */}
+
+      <Stack
+        screenOptions={{
+          headerShown: false,
+        }}
+      />
+    </>
+  );
+// ═════════════════════════════════════════════════════════════════════
+  // 1️⃣ SHOW SPLASH WHILE CHECKING AUTH
+  // ═════════════════════════════════════════════════════════════════════
+  // if (isCheckingAuth) {
+  //   console.log('🎬 Showing splash screen');
+  //   return <SplashScreen />;
+  // }else{
+   
     
-
-    if (!userToken && !inAuthGroup) {
-      // If not logged in and not in auth group, redirect to login
-      router.replace('/login');
-    } else if (userToken && inAuthGroup) {
-      // If logged in and in auth group, redirect to tabs
-      router.replace('/(tabs)');
-    }
-  }, [userToken, isLoading, segments, router]);
-
-  if (isLoading) {
+  //   // ═════════════════════════════════════════════════════════════════════
+  //   // 4️⃣ RENDER STACK WITH INITIAL ROUTE
+  //   // ═════════════════════════════════════════════════════════════════════
+  //   console.log('📱 Rendering stack with route:');
+  
     return (
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-        <ActivityIndicator size="large" />
-      </View>
+      <Stack
+        screenOptions={{
+          headerShown: false,
+          // animationEnabled: false, // ✅ No animation from splash
+        }}
+      />
     );
   }
 
-  return (
-    <Stack screenOptions={{ headerShown: false }} />
-  );
-}
+
+
+
+// ═════════════════════════════════════════════════════════════════════
+// MAIN EXPORT
+// ═════════════════════════════════════════════════════════════════════
 
 export default function RootLayout() {
   return (

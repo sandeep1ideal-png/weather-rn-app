@@ -23,7 +23,6 @@ import { supabase } from "@/lib/supabase";
 const LoginScreen = () => {
   const [username, setUsername] = useState<string>("sandeep.raghuwanshi.ideal@gmail.com");
   const [password, setPassword] = useState<string>("123456");
-  const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string>("");
 
   const navigation = useNavigation();
@@ -44,7 +43,7 @@ const LoginScreen = () => {
   //     router.replace("/(tabs)");
   //   };
   const router = useRouter();
-  const { signIn } = useAuth();
+  const { signIn, isLoading, setIsLoading } = useAuth();
   const handleLogin = async () => {
     if (!username || !password) {
       setError("Please enter both username and password");
@@ -67,7 +66,7 @@ const LoginScreen = () => {
 
       }
 
-      console.log(error);
+      // console.log(error);
       if (error) {
         console.log(error);
         alert(error.message);

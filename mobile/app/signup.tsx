@@ -8,6 +8,7 @@ import {
   Image,
   Modal,
   StyleSheet,
+  ActivityIndicator,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import {
@@ -91,12 +92,12 @@ export default function SignUpScreen() {
   const removeInterest = (interest: string) => {
     setSelectedInterests(selectedInterests.filter((i) => i !== interest));
   };
-  const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string>("");
-  const { signIn, signUpData } = useAuth();
+  const { signIn, signUpData, isLoading, setIsLoading } = useAuth();
   const checkVerification = async () => {
     // const { data } = await supabase.auth.getSession();
     // const { data } = await supabase.auth.getUser();
+    return
     const { data, error } = await supabase.auth.signInWithPassword({
       email: userPassword.email,
       password: userPassword.password,
@@ -154,22 +155,6 @@ export default function SignUpScreen() {
     setIsLoading(true);
     setError("");
     try {
-      // Replace this with your actual login API call
-
-      // router.replace("/(tabs)");
-      //  const { data:user, error } = await supabase.auth.signUp({
-      //     email:username,
-      //     password,
-      //   });
-      // console.log({
-      //     id: 'userId',
-      //     username: formData.username,
-      //     fullname: formData.fullName,
-      //     gender: formData.gender,
-      //     bio: formData.bio,
-      //     dob: formData.dob,
-      //     interests: selectedInterests,
-      //   })
 
       const { data: user, error } = await supabase.auth.signUp({
         email: formData.email,
@@ -203,41 +188,6 @@ export default function SignUpScreen() {
         location: "sinhasa it park  indore, mp",
       });
 
-      return;
-      //       id uuid primary key references auth.users(id) on delete cascade,
-
-      // username text unique not null,
-      // fullname text not null,
-      // gender text not null,
-      // bio text,
-      // dob date not null,
-      // interests text[],
-
-      // -- Location fields
-      // location text not null,          -- e.g. "Indore, MP, India"
-      // latitude double precision,
-      // longitude double precision,
-
-      // created_at timestamp with time zone default now()
-      const response = await fetch("http://192.168.1.207:3000/api/login", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ username, password }),
-      });
-
-      const data = await response.json();
-
-      if (response.ok) {
-        // await signIn(data.token,{
-        //   email: username,
-        //   name: username,
-        // });
-        // Navigation will be handled by the RootNavigator based on userToken
-      } else {
-        setError(data.message || "Login failed");
-      }
     } catch (err) {
       setError("An error occurred. Please try again.");
       console.error("Login error:", err);
@@ -608,12 +558,31 @@ export default function SignUpScreen() {
           </View>
 
           {/* Sign Up Button */}
-          <TouchableOpacity
+          {/* <TouchableOpacity
             className="bg-[#EF5A6F] rounded-full py-4 items-center mt-4"
             onPress={handleSignup}
           >
             <Text className="text-white font-semibold text-base">Sign Up</Text>
-          </TouchableOpacity>
+          </TouchableOpacity> */}
+
+           <TouchableOpacity
+                      style={[
+                        styles.loginButton,
+                        (isLoading) && styles.disabledButton,
+                      ]}
+                      onPress={handleSignup}
+                      disabled={isLoading }
+                      activeOpacity={0.8}
+                    >
+                      {isLoading ? (
+                        <View style={styles.buttonContent}>
+                          <ActivityIndicator color="#fff" size="small" style={styles.loader} />
+                          <Text style={styles.loginButtonText}>Sign Up...</Text>
+                        </View>
+                      ) : (
+                        <Text style={styles.loginButtonText}>Sign Up</Text>
+                      )}
+                    </TouchableOpacity>
 
           {/* Divider */}
           <View className="flex-row items-center my-4">
@@ -745,6 +714,37 @@ export default function SignUpScreen() {
 }
 
 const styles = StyleSheet.create({
+   loader: {
+    marginRight: 8,
+  },
+  loginButtonText: {
+    color: "#FFFFFF",
+    fontSize: 17,
+    fontWeight: "600",
+    letterSpacing: 0.5,
+  },
+  buttonContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  disabledButton: {
+    backgroundColor: "#9CA3AF",
+    opacity: 0.7,
+  },
+  loginButton: {
+    backgroundColor: "#EF5A6F",
+    borderRadius: 30,
+    paddingVertical: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 32,
+    elevation: 2,
+    shadowColor: "#EF5A6F",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+  },
   socialLoginContainer: {
     flexDirection: "row",
     justifyContent: "center",
