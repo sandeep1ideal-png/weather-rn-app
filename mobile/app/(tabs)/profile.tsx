@@ -2,11 +2,14 @@ import React from 'react';
 import { View, Text, StyleSheet, SafeAreaView, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '@/src/context/AuthContext';
+import { supabase } from '@/lib/supabase';
 
 const ProfileScreen = () => {
   const { signOut, signUpData } = useAuth();
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+        const { error } =  await supabase.auth.signOut();
+
     signUpData({})
     signOut();
   };

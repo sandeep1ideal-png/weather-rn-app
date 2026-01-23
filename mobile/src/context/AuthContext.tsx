@@ -1,9 +1,11 @@
 // src/context/AuthContext.tsx
 import React, { createContext, useState, useEffect, useCallback, useMemo } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { supabase } from '@/lib/supabase';
 
 type AuthContextType = {
   isLoading: boolean;
+  setIsLoading: (loading: boolean) => void;
   userToken: string | null;
   signIn: (token: string) => Promise<void>;
   signOut: () => Promise<void>;
@@ -13,6 +15,7 @@ type AuthContextType = {
 
 export const AuthContext = createContext<AuthContextType>({
   isLoading: true,
+  setIsLoading: () => {},
   userToken: null,
   signIn: async () => {},
   signOut: async () => {},
@@ -25,11 +28,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [userToken, setUserToken] = useState<string | null>(null);
   const [signupUserData, setSignupUserData] = useState<SignupData | null>(null);
 
+
   // Load token from storage on mount
   const loadToken = useCallback(async () => {
     try {
       const token = await AsyncStorage.getItem('userToken');
       const user:any = await AsyncStorage.getItem('signupData');
+      console.log('set load token can redirect tab', token, user)
+
       setUserToken(token);
       setSignupUserData(user)
       return token;
@@ -92,12 +98,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const authContextValue = useMemo(() => ({
     isLoading,
+    setIsLoading,
     userToken,
     signIn,
     signOut,
     signUpData,
-    signupUserData
-  }), [isLoading, userToken, signIn, signOut, signUpData, signupUserData]);
+    signupUserData,
+  }), [isLoading, setIsLoading, userToken, signIn, signOut, signUpData, signupUserData]);
 
   // Debug effect for auth state changes
   useEffect(() => {
@@ -116,4 +123,50 @@ export const useAuth = () => {
     throw new Error('useAuth must be used within an AuthProvider');
   }
   return context;
+};
+
+export const useSessionRestore = () => {
+  const [isLoading, setIsLoading] = useState(true);
+  const [session, setSession] = useState(null);
+      const [isCheckingAuth, setIsCheckingAuth] = useState(true);
+  const [initialRoute, setInitialRoute] = useState<string | null>(null);
+
+
+  useEffect(() => {
+    const restoreSession = async () => {
+      try {
+        // Wait for SecureStore to restore session
+        await new Promise(resolve => setTimeout(resolve, 1000));
+
+        const { data: { session } } = await supabase.auth.getSession();
+        console.log('session use', session);
+        setSession(session);
+        setIsCheckingAuth(false)
+          if (session?.user) {
+          console.log('✅ User logged in - redirecting to tabs');
+          setInitialRoute('(tabs)');
+        } else {
+          console.log('❌ No session');
+          const signupData = await AsyncStorage.getItem('signupData');
+          if (signupData) {
+            console.log('⏳ Waiting for verification');
+            setInitialRoute('login');
+          } else {
+            console.log('📱 Show login');
+            setInitialRoute('login');
+          }
+        }
+        setIsLoading(false);
+
+        console.log('✅ Session restored on app launch:', !!session);
+      } catch (error) {
+        console.error('Restore error:', error);
+        setIsLoading(false);
+      }
+    };
+
+    restoreSession();
+  }, []);
+
+  return { session, isLoading,isCheckingAuth,initialRoute  };
 };

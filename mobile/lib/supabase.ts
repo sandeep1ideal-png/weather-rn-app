@@ -1,17 +1,45 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createClient } from '@supabase/supabase-js';
 
+// export const supabase = createClient(
+//   process.env.EXPO_PUBLIC_SUPABASE_URL!,
+//   process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY!,
+//   {
+//     auth: {
+//       detectSessionInUrl: true,   // 🔥 MUST
+//       persistSession: true,       // store session locally
+//       autoRefreshToken: true,     // auto refresh
+//     },
+//   }
+// );
+
+const AsyncStorageAdapter = {
+  getItem: async (key: string) => {
+    console.log('🔍 getItem called by Supabase');
+    return await AsyncStorage.getItem(key);
+  },
+  setItem: async (key: string, value: string) => {
+    console.log('💾 setItem called by Supabase'); // ← You'll see this
+    return await AsyncStorage.setItem(key, value);
+  },
+  removeItem: async (key: string) => {
+    console.log('🗑️ removeItem called by Supabase');
+    return await AsyncStorage.removeItem(key);
+  },
+};
+
+// 2️⃣ Pass adapter to Supabase
 export const supabase = createClient(
   process.env.EXPO_PUBLIC_SUPABASE_URL!,
   process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY!,
   {
     auth: {
-      detectSessionInUrl: true,   // 🔥 MUST
-      persistSession: true,       // store session locally
-      autoRefreshToken: true,     // auto refresh
+      storage: AsyncStorageAdapter, // ← Just pass it here
+      persistSession: true,
+      autoRefreshToken: true,
     },
   }
 );
-
 
 // import { createClient } from "@supabase/supabase-js";
 
