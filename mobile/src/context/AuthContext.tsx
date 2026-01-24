@@ -34,8 +34,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       const token = await AsyncStorage.getItem('userToken');
       const user:any = await AsyncStorage.getItem('signupData');
-      console.log('set load token can redirect tab', token, user)
-
+      console.log('token:', token);
       setUserToken(token);
       setSignupUserData(user)
       return token;
@@ -53,7 +52,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signIn = useCallback(async (token: string) => {
     try {
-      await AsyncStorage.setItem('userToken', token);
+      console.log('token:1', token);
+      await AsyncStorage.setItem('userToken', (token));
       setUserToken(token);
     } catch (e) {
       console.error('Failed to save token', e);
@@ -139,26 +139,20 @@ export const useSessionRestore = () => {
         await new Promise(resolve => setTimeout(resolve, 1000));
 
         const { data: { session } } = await supabase.auth.getSession();
-        console.log('session use', session);
         setSession(session);
         setIsCheckingAuth(false)
           if (session?.user) {
-          console.log('✅ User logged in - redirecting to tabs');
           setInitialRoute('(tabs)');
         } else {
-          console.log('❌ No session');
           const signupData = await AsyncStorage.getItem('signupData');
           if (signupData) {
-            console.log('⏳ Waiting for verification');
             setInitialRoute('login');
           } else {
-            console.log('📱 Show login');
             setInitialRoute('login');
           }
         }
         setIsLoading(false);
 
-        console.log('✅ Session restored on app launch:', !!session);
       } catch (error) {
         console.error('Restore error:', error);
         setIsLoading(false);

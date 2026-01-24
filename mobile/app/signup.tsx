@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   View,
   Text,
@@ -26,6 +26,7 @@ import { useNavigation } from "@react-navigation/native";
 import { Link } from "expo-router";
 import { useAuth } from "@/src/context/AuthContext";
 import { supabase } from "@/lib/supabase";
+import * as Location from 'expo-location';
 
 export default function SignUpScreen() {
   const navigation = useNavigation();
@@ -94,6 +95,26 @@ export default function SignUpScreen() {
   };
   const [error, setError] = useState<string>("");
   const { signIn, signUpData, isLoading, setIsLoading } = useAuth();
+  const [location, setLocation] = useState<any>({latitude:null,longitude:null });
+  useEffect(() => {
+    const init = async ()=>{
+       const { status } = await Location.requestForegroundPermissionsAsync();
+            if (status !== 'granted') {
+              throw new Error('Location permission not granted');
+            }
+      
+            const location = await Location.getCurrentPositionAsync({});
+            const { latitude, longitude } = location.coords;
+            console.log('user location', latitude, longitude);
+            setLocation({latitude:latitude, longitude:longitude})
+    }
+    init()
+  
+    return () => {
+      
+    }
+  }, [])
+  
   const checkVerification = async () => {
     // const { data } = await supabase.auth.getSession();
     // const { data } = await supabase.auth.getUser();
@@ -124,7 +145,7 @@ export default function SignUpScreen() {
         alert(profileError.message);
       }
 
-      await signIn(`${data}`);
+          await signIn(`${JSON.stringify(data)}`)
       if (profileError) {
         console.log(profileError);
         alert(profileError.message);
@@ -137,7 +158,7 @@ export default function SignUpScreen() {
 
   const handleSignup = async () => {
     // signUpData({
-    //     userId: '12',
+    //     userId : '12',
     //     email: formData.email,
     //     password: formData.password,
     //     id: userId,
@@ -173,7 +194,7 @@ export default function SignUpScreen() {
         password: formData.password,
       });
       signUpData({
-        userId: user.user.id,
+        userId : user.user.id,
         email: formData.email,
         password: formData.password,
         id: userId,

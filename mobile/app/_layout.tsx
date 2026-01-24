@@ -10,6 +10,11 @@ import { supabase } from '@/lib/supabase';
 import * as Linking from 'expo-linking';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import SplashScreen from '@/components/Splash';
+import { verifyData } from 'react-native-css-interop';
+import { QueryClientProvider } from '@tanstack/react-query';
+import { QueryClient } from '@tanstack/react-query';
+
+const queryClient = new QueryClient();
 
 function RootLayoutNav() {
   const {  isLoading,setIsLoading,userToken } = useAuth();
@@ -60,7 +65,7 @@ function RootLayoutNav() {
             const { data: { session: verifySession }, error: verifyError } = await supabase.auth.getSession();
 
             if (verifySession?.user) {
-              checkVerification()
+              checkVerification(verifySession?.user)
             }else{
               setIsLoading(false)
             }
@@ -90,7 +95,7 @@ function RootLayoutNav() {
     return () => unsubscribe.remove();
   }, [router,signupUserData,userToken]);
 
-  const checkVerification = async () => {
+  const checkVerification = async (user:any) => {
         const { error: profileError } = await supabase.from("profiles").insert({
           id: signupUserData.userId,
           username: signupUserData.username,
@@ -109,7 +114,8 @@ function RootLayoutNav() {
           setIsLoading(false)
         }else{
           setIsLoading(false)
-          await signIn(`${signupUserData}`);
+          // await signIn(`${signupUserData}`);
+          await signIn(`${user}`)
         }
   
         if (profileError) {
@@ -232,12 +238,24 @@ return (
 
 export default function RootLayout() {
   return (
-    <AuthProvider>
-      <ThemeProvider>
-        <SafeAreaProvider>
-          <RootLayoutNav />
-        </SafeAreaProvider>
-      </ThemeProvider>
-    </AuthProvider>
+    //     <QueryClientProvider client={queryClient}>
+
+    // <AuthProvider>
+    //   <ThemeProvider>
+    //     <SafeAreaProvider>
+    //       <RootLayoutNav />
+    //     </SafeAreaProvider>
+    //   </ThemeProvider>
+    // </AuthProvider>
+    // </QueryClientProvider>
+    <QueryClientProvider client={queryClient}>
+      <AuthProvider>
+        <ThemeProvider>
+          <SafeAreaProvider>
+            <RootLayoutNav />
+          </SafeAreaProvider>
+        </ThemeProvider>
+      </AuthProvider>
+    </QueryClientProvider>
   );
 }

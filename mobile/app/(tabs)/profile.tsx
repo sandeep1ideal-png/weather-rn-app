@@ -3,6 +3,9 @@ import { View, Text, StyleSheet, SafeAreaView, TouchableOpacity } from 'react-na
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '@/src/context/AuthContext';
 import { supabase } from '@/lib/supabase';
+import { Settings, Bell, Shield, HelpCircle, ImageIcon, UserX } from 'lucide-react-native';
+import { useRouter } from "expo-router";
+
 
 const ProfileScreen = () => {
   const { signOut, signUpData } = useAuth();
@@ -13,7 +16,25 @@ const ProfileScreen = () => {
     signUpData({})
     signOut();
   };
+  const router = useRouter();
 
+  const menuItems = [
+    // { icon: Settings, label: "Settings", onPress: () => {} },
+    // { icon: Bell, label: "Notifications", onPress: () => {} },
+    // { icon: Shield, label: "Privacy", onPress: () => {} },
+    // { icon: HelpCircle, label: "Help & Support", onPress: () => {} },
+    {
+      icon: ImageIcon,
+      label: "Edit Photos",
+      onPress: () => router.replace('/edit-photo')
+      ,
+    },
+    {
+      icon: UserX,
+      label: "Blocked Users",
+      // onPress: () => router.push("/blocked-users"),
+    },
+  ];
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.content}>
@@ -58,6 +79,33 @@ const ProfileScreen = () => {
             <Text style={styles.menuText}>Help & Support</Text>
             <Ionicons name="chevron-forward" size={20} color="#999" />
           </TouchableOpacity>
+ <TouchableOpacity onPress={() => router.push("/edit-photo")} style={styles.menuItem}>
+            <Ionicons name="help-circle-outline" size={24} color="#666" />
+            <Text style={styles.menuText}>Edit Photos</Text>
+            <Ionicons name="chevron-forward" size={20} color="#999" />
+          </TouchableOpacity>
+             {menuItems.map((item, index) => (
+            <TouchableOpacity
+              key={index}
+              onPress={item.onPress}
+              className="bg-card rounded-xl p-4 flex-row items-center justify-between border border-border"
+            >
+              <View className="flex-row items-center gap-3">
+                <View className="bg-pink-50 rounded-full p-2">
+                  <item.icon color="#EF4765" size={20} />
+                </View>
+                <Text className="text-foreground font-medium">
+                  {item.label}
+                </Text>
+              </View>
+              {/* <ChevronRight color="#9CA3AF" size={20} /> */}
+            </TouchableOpacity>
+          ))}
+           {/* {
+      icon: ImageIcon,
+      label: "Edit Photos",
+      onPress: () => router.push("/edit-photos"),
+    }, */}
           
           <TouchableOpacity style={styles.menuItem} onPress={handleLogout}>
             <Ionicons name="log-out-outline" size={24} color="#FF6B6B" />

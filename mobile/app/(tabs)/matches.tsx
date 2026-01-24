@@ -11,6 +11,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { Heart, MessageCircle, X } from "lucide-react-native";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { useRouter } from "expo-router";
+import { useNearbyUsers } from "@/src/hooks/useNearbyUsers";
 
 const { width } = Dimensions.get("window");
 const CARD_WIDTH = (width - 48) / 2; // 2 columns with padding
@@ -31,7 +32,7 @@ const matchesData: Match[] = [
     name: "Emma",
     age: 26,
     image:
-      "https://images.unsplash.com/photo-1739133783212-e1c93795d9c7?w=900&auto=format&fit=crop&q=60",
+      "https://vhgfggyimfjnywwaieoa.supabase.co/storage/v1/object/public/profile-photos/2ff2fe3b-c7c0-4d2f-a4c0-df7868338223/photo-1-1769165633211.jpg",
     matchPercentage: 95,
     distance: "2 km away",
     isNew: true,
@@ -98,6 +99,8 @@ export default function MatchesScreen() {
   const handleRemoveMatch = (id: string) => {
     setMatches(matches.filter((m) => m.id !== id));
   };
+  const { users, isLoading, error} = useNearbyUsers(10);
+  console.log('users', users);
 
   const MatchCard = ({ match }: { match: Match }) => (
     <View style={{ width: CARD_WIDTH, marginBottom: 16 }}>
