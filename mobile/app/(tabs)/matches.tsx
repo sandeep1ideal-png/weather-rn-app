@@ -99,8 +99,8 @@ export default function MatchesScreen() {
   const handleRemoveMatch = (id: string) => {
     setMatches(matches.filter((m) => m.id !== id));
   };
-  const { users, isLoading, error} = useNearbyUsers(10);
-  console.log('users', users);
+  // const { users, isLoading, error} = useNearbyUsers(10);
+  // console.log('users', users);
 
   const MatchCard = ({ match }: { match: Match }) => (
     <View style={{ width: CARD_WIDTH, marginBottom: 16 }}>

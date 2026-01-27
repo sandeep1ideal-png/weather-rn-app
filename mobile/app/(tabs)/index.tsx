@@ -15,6 +15,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { Bell, Search, Sliders, MapPin, X } from "lucide-react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
+import { useNearbyUsers } from "@/src/hooks/useNearbyUsers";
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get("window");
 const SWIPE_THRESHOLD = 120;
@@ -25,21 +26,21 @@ type Profile = {
   age: number;
   distance: string;
   location: string;
-  images: string[];
+  photos: string[];
   bio: string;
   interests: string[];
 };
 
-const profiles: Profile[] = [
+const profiles1: Profile[] = [
   {
     id: 1,
     name: "Sephia",
     age: 26,
     distance: "3.2 km away",
     location: "New York",
-    images: [
-      "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=800",
-      "https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=800",
+    photos: [
+      "https://photos.unsplash.com/photo-1494790108377-be9c29b29330?w=800",
+      "https://photos.unsplash.com/photo-1524504388940-b1c1722653e1?w=800",
     ],
     bio: "Adventure seeker | Coffee lover ☕ | Love to travel and explore new places 🌍",
     interests: ["Music", "Dance", "Cooking", "Kids"],
@@ -50,9 +51,9 @@ const profiles: Profile[] = [
     age: 24,
     distance: "5.1 km away",
     location: "Brooklyn",
-    images: [
-      "https://images.unsplash.com/photo-1529626455594-4ff0802cfb7e?w=800",
-      "https://images.unsplash.com/photo-1488426862026-3ee34a7d66df?w=800",
+    photos: [
+      "https://photos.unsplash.com/photo-1529626455594-4ff0802cfb7e?w=800",
+      "https://photos.unsplash.com/photo-1488426862026-3ee34a7d66df?w=800",
     ],
     bio: "Yoga instructor 🧘‍♀️ | Nature lover | Looking for genuine connections",
     interests: ["Yoga", "Travel", "Photography", "Cooking"],
@@ -63,9 +64,9 @@ const profiles: Profile[] = [
     age: 28,
     distance: "2.8 km away",
     location: "Manhattan",
-    images: [
-      "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=800",
-      "https://images.unsplash.com/photo-1517841905240-472988babdf9?w=800",
+    photos: [
+      "https://photos.unsplash.com/photo-1534528741775-53994a69daeb?w=800",
+      "https://photos.unsplash.com/photo-1517841905240-472988babdf9?w=800",
     ],
     bio: "Artist & Designer | Dog mom 🐕 | Wine enthusiast 🍷",
     interests: ["Art", "Design", "Wine", "Dogs"],
@@ -77,9 +78,15 @@ export default function HomeScreen() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [showProfile, setShowProfile] = useState(false);
   const [showMatch, setShowMatch] = useState(false);
-  const [matchedProfile, setMatchedProfile] = useState<Profile | null>(null);
+  const [matchedProfile, setMatchedProfile]:any = useState<Profile | null>(null);
 
   const position = useRef(new Animated.ValueXY()).current;
+    const { users, isLoading, error} = useNearbyUsers(10);
+    console.log('users', users);
+
+    const profiles:any  = users.filter((m:any) => m.photos?.length>0);
+
+  
   const rotation = position.x.interpolate({
     inputRange: [-SCREEN_WIDTH / 2, 0, SCREEN_WIDTH / 2],
     outputRange: ["-10deg", "0deg", "10deg"],
@@ -148,6 +155,13 @@ export default function HomeScreen() {
   };
 
   const currentProfile = profiles[currentIndex];
+  if(isLoading) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <Text>Loading...</Text>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.container}>
@@ -156,7 +170,7 @@ export default function HomeScreen() {
         <View style={styles.matchInfo}>
           <Image
             source={{
-              uri: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100",
+              uri: "https://photos.unsplash.com/photo-1500648767791-00dcc994a43e?w=100",
             }}
             style={styles.matchAvatar}
           />
@@ -205,7 +219,7 @@ export default function HomeScreen() {
                 {...panResponder.panHandlers}
               >
                 <Image
-                  source={{ uri: profile.images[0] }}
+                  source={{ uri: profile?.photos[0]?.url }}
                   style={styles.cardImage}
                 />
 
@@ -234,7 +248,7 @@ export default function HomeScreen() {
                   <View style={styles.cardInfo}>
                     <View style={styles.profileHeader}>
                       <Image
-                        source={{ uri: profile.images[0] }}
+                        source={{ uri: profile?.photos[0]?.url }}
                         style={styles.smallAvatar}
                       />
                       <View style={styles.nameContainer}>
@@ -254,11 +268,14 @@ export default function HomeScreen() {
                     </View>
 
                     <View style={styles.interestsRow}>
-                      {profile.interests.map((interest, idx) => (
+                      {/* {profile?.interests?.map((interest, idx) => (
                         <View key={idx} style={styles.interestChip}>
                           <Text style={styles.interestText}>{interest}</Text>
                         </View>
-                      ))}
+                      ))} */}
+                       <View  style={styles.interestChip}>
+                          <Text style={styles.interestText}>{`interest`}</Text>
+                        </View>
                       <TouchableOpacity
                         style={styles.moreButton}
                         onPress={() => setShowProfile(true)}
@@ -275,7 +292,7 @@ export default function HomeScreen() {
           return (
             <View key={profile.id} style={[styles.card, styles.nextCard]}>
               <Image
-                source={{ uri: profile.images[0] }}
+                source={{ uri: profile?.photos[0]?.url }}
                 style={styles.cardImage}
               />
             </View>
@@ -296,35 +313,38 @@ export default function HomeScreen() {
 
             <ScrollView showsVerticalScrollIndicator={false}>
               <Image
-                source={{ uri: currentProfile.images[0] }}
+                source={{ uri: currentProfile?.photos[0]?.url }}
                 style={styles.modalImage}
               />
 
               <View style={styles.modalContent}>
                 <Text style={styles.modalName}>
-                  {currentProfile.name}, {currentProfile.age}
+                  {currentProfile?.name}, {currentProfile?.age}
                 </Text>
 
                 <View style={styles.modalLocationRow}>
                   <MapPin size={20} color="#6B7280" />
                   <Text style={styles.modalLocation}>
-                    {currentProfile.location} • {currentProfile.distance}
+                    {currentProfile?.location} • {currentProfile?.distance}
                   </Text>
                 </View>
 
                 <View style={styles.section}>
                   <Text style={styles.sectionTitle}>About</Text>
-                  <Text style={styles.bioText}>{currentProfile.bio}</Text>
+                  <Text style={styles.bioText}>{currentProfile?.bio}</Text>
                 </View>
 
                 <View style={styles.section}>
                   <Text style={styles.sectionTitle}>Interests</Text>
                   <View style={styles.modalInterests}>
-                    {currentProfile.interests.map((interest, idx) => (
+                    {/* {currentProfile?.interests.map((interest, idx) => (
                       <View key={idx} style={styles.modalInterestChip}>
                         <Text style={styles.modalInterestText}>{interest}</Text>
                       </View>
-                    ))}
+                    ))} */}
+                    <View style={styles.modalInterestChip}>
+                      <Text style={styles.modalInterestText}>interest</Text>
+                    </View>
                   </View>
                 </View>
               </View>
@@ -345,7 +365,7 @@ export default function HomeScreen() {
             <View style={styles.matchAvatars}>
               <Image
                 source={{
-                  uri: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=200",
+                  uri: "https://photos.unsplash.com/photo-1500648767791-00dcc994a43e?w=200",
                 }}
                 style={styles.matchAvatar1}
               />
@@ -353,7 +373,7 @@ export default function HomeScreen() {
                 <Text style={styles.heartEmoji}>💕</Text>
               </View>
               <Image
-                source={{ uri: matchedProfile?.images[0] }}
+                source={{ uri: matchedProfile?.photos[0]?.url }}
                 style={styles.matchAvatar2}
               />
             </View>
