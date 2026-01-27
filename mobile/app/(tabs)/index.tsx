@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useCallback } from "react";
 import {
   View,
   Text,
@@ -18,6 +18,8 @@ import { useRouter } from "expo-router";
 import { setSelectedUser } from "@/src/api/userData";
 // import { setSelectedUser } from "../userData";
 import { useNearbyUsers } from "@/src/hooks/useNearbyUsers";
+import { likeUser } from "@/src/api/likes";
+import { useAuth } from "@/src/context/AuthContext";
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get("window");
 const SWIPE_THRESHOLD = 120;
@@ -49,7 +51,7 @@ type Profile = {
   interests: string[];
 };
 
-const profiles: Profile[] = [
+const profiles2: Profile[] = [
   {
     id: 1,
     name: "Sephia",
@@ -126,7 +128,8 @@ export default function HomeScreen() {
 
   const position = useRef(new Animated.ValueXY()).current;
   const { users: profiles, isLoading, error } = useNearbyUsers(10);
-  console.log("users", profiles);
+  const {  userToken } = useAuth();
+  const {user} = JSON.parse(userToken)
 
   // const profiles:any  = users.filter((m:any) => m.photos?.length>0);
 
@@ -157,22 +160,71 @@ export default function HomeScreen() {
           useNativeDriver: false,
         },
       ),
-      onPanResponderRelease: (_, gesture) => {
-        if (gesture.dx > SWIPE_THRESHOLD) {
-          swipeRight();
-        } else if (gesture.dx < -SWIPE_THRESHOLD) {
-          swipeLeft();
-        } else {
-          Animated.spring(position, {
-            toValue: { x: 0, y: 0 },
-            useNativeDriver: false,
-          }).start();
-        }
-      },
+      // onPanResponderRelease: (_, gesture) => {
+      //   if (gesture.dx > SWIPE_THRESHOLD) {
+      //       console.log('if kkkkkkkkkkkkkkkkkkkkkk')
+      //     swipeRight();
+      //   } else if (gesture.dx < -SWIPE_THRESHOLD) {
+      //               console.log('else kkkkkkkkkkkkkkkkkkkkkk')
+
+      //     swipeLeft();
+      //   } else {
+      //     Animated.spring(position, {
+      //       toValue: { x: 0, y: 0 },
+      //       useNativeDriver: false,
+      //     }).start();
+      //   }
+      // },
+      onPanResponderRelease: async (_, gesture) => {
+  if (gesture.dx > SWIPE_THRESHOLD) {
+    console.log('Swiping right - Liking user');
+    await swipeRight();
+  } else if (gesture.dx < -SWIPE_THRESHOLD) {
+    console.log('Swiping left');
+    swipeLeft();
+  } else {
+    Animated.spring(position, {
+      toValue: { x: 0, y: 0 },
+      friction: 4,
+      useNativeDriver: false,
+    }).start();
+  }
+}
     }),
   ).current;
 
-  const swipeRight = () => {
+  const swipeRight1 = () => {
+    Animated.timing(position, {
+      toValue: { x: SCREEN_WIDTH + 100, y: 0 },
+      duration: 300,
+      useNativeDriver: false,
+    }).start(async () => {
+      const success = await likeUser(user.id,currentProfile.id);
+      if (success) {
+        // Show some feedback for like
+        console.log('Liked user:', currentProfile.name);
+      }
+
+      setMatchedProfile(profiles[currentIndex]);
+      setShowMatch(true);
+      nextCard();
+    });
+  };
+    const currentProfile: any = profiles[currentIndex];
+
+const swipeRight = useCallback(async () => {
+  // if (!currentProfile || !user?.id) return;
+
+  try {
+    console.log('Liked user:profiles1[currentIndex]', currentIndex);
+   console.log(JSON.stringify(profiles))
+    // const success =  likeUser(user.id, currentProfile.id);
+    // if (success) {
+    // } else {
+    //   console.error('Failed to like user');
+    //   return;
+    // }
+
     Animated.timing(position, {
       toValue: { x: SCREEN_WIDTH + 100, y: 0 },
       duration: 300,
@@ -182,8 +234,11 @@ export default function HomeScreen() {
       setShowMatch(true);
       nextCard();
     });
-  };
-
+  } catch (error) {
+    console.error('Error in swipeRight:', error);
+  }
+}, []);
+// currentProfile, currentIndex, profiles1, user?.id
   const swipeLeft = () => {
     Animated.timing(position, {
       toValue: { x: -SCREEN_WIDTH - 100, y: 0 },
@@ -197,7 +252,6 @@ export default function HomeScreen() {
     setCurrentIndex((prev) => (prev + 1) % profiles.length);
   };
 
-  const currentProfile: any = profiles[currentIndex];
   if (isLoading) {
     return (
       <SafeAreaView style={styles.container}>
@@ -276,18 +330,18 @@ export default function HomeScreen() {
                 {...(isTopCard ? panResponder.panHandlers : {})}
               >
                 {/* <Image
-                  source={{ uri: profile.photos[0].url }}
+                  source={{ uri: profile.photos[0]?.url }}
                   style={styles.cardImage}
                 /> */}
                 <TouchableOpacity
                   activeOpacity={1}
                   onPress={() => {
                     // setSelectedUser(profile); // Set the selected user data
-                    router.push(`/details/${profile.id}`); // Navigate to details page
+                    // router.push(`/details/${profile.id}`); // Navigate to details page
                   }}
                 >
                   <Image
-                    source={{ uri: profile.photos[0].url }}
+                    source={{ uri: profile.photos[0]?.url }}
                     style={styles.cardImage}
                   />
                 </TouchableOpacity>
@@ -321,7 +375,7 @@ export default function HomeScreen() {
                   <View style={styles.cardInfo}>
                     <View style={styles.profileHeader}>
                       <Image
-                        source={{ uri: profile.photos[0].url }}
+                        source={{ uri: profile.photos[0]?.url }}
                         style={styles.smallAvatar}
                       />
                       {/* <View style={styles.nameContainer}> */}
@@ -383,25 +437,25 @@ export default function HomeScreen() {
 
             <ScrollView showsVerticalScrollIndicator={false}>
               <Image
-                source={{ uri: currentProfile.photos[0].url }}
+                source={{ uri: currentProfile?.photos[0]?.url }}
                 style={styles.modalImage}
               />
 
               <View style={styles.modalContent}>
                 <Text style={styles.modalName}>
-                  {currentProfile.name}, {currentProfile.age}
+                  {currentProfile?.name}, {currentProfile?.age}
                 </Text>
 
                 <View style={styles.modalLocationRow}>
                   <MapPin size={20} color="#6B7280" />
                   <Text style={styles.modalLocation}>
-                    {currentProfile.location} • {currentProfile.distance}
+                    {currentProfile?.location} • {currentProfile?.distance}
                   </Text>
                 </View>
 
                 <View style={styles.section}>
                   <Text style={styles.sectionTitle}>About</Text>
-                  <Text style={styles.bioText}>{currentProfile.bio}</Text>
+                  <Text style={styles.bioText}>{currentProfile?.bio}</Text>
                 </View>
 
                 <View style={styles.section}>
@@ -443,7 +497,7 @@ export default function HomeScreen() {
                 <Text style={styles.heartEmoji}>💕</Text>
               </View>
               <Image
-                source={{ uri: matchedProfile?.photos[0].url }}
+                source={{ uri: matchedProfile?.photos[0]?.url }}
                 style={styles.matchAvatar2}
               />
             </View>

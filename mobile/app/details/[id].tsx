@@ -33,6 +33,10 @@ import Animated, {
   runOnJS,
 } from "react-native-reanimated";
 import { fetchUserById } from '@/src/api/users';
+  // In your details screen
+import { likeUser, unlikeUser, hasLikedUser } from '@/src/api/likes';
+import { supabase } from '@/lib/supabase';
+import { useAuth } from '@/src/context/AuthContext';
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 const CARD_WIDTH = SCREEN_WIDTH * 0.7;
@@ -42,6 +46,10 @@ const CARD_SPACING = 16;
 export default function DetailsScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const [data, setData] = useState<any>(null);
+  const {  userToken } = useAuth();
+  const {user} = JSON.parse(userToken)
+
+  console.log('userToken.user',user.id)
 
 
     const router = useRouter();
@@ -66,7 +74,9 @@ export default function DetailsScreen() {
 //   is_primary?: boolean;
 //   interests?: string[];
    useEffect(() => {
-    const loadUserData = async () => {
+     
+     const loadUserData = async () => {
+      // const { data: { user } } = await supabase.auth.getUser();
       if (!id) {
         setError('No user ID provided');
         setIsLoading(false);
@@ -109,6 +119,33 @@ export default function DetailsScreen() {
     // Get the selected user from the store
     
   }, [id]);
+
+// Inside your DetailsScreen component
+const [isLiked, setIsLiked] = useState(false);
+// useEffect(() => {
+//   const checkIfLiked = async () => {
+//     const liked = await hasLikedUser(id);
+//     setIsLiked(liked);
+//   };
+//   checkIfLiked();
+// }, [id]);
+useEffect(() => {
+  const checkIfLiked = async () => {
+    if (!id || !user?.id) return;
+    const liked = await hasLikedUser(user.id, id);
+    setIsLiked(liked);
+  };
+  checkIfLiked();
+}, [id, user?.id]);
+const handleLike = async () => {
+  console.log(isLiked,'isLiked')
+  if (isLiked) {
+    await unlikeUser(user.id,id);
+  } else {
+    await likeUser(user.id,id);
+  }
+  setIsLiked(!isLiked);
+};
  
 
   const updatePhoto = (newIndex: number) => {
@@ -295,8 +332,17 @@ export default function DetailsScreen() {
 
             {/* Action Buttons */}
             <View style={styles.actionButtons}>
-              <TouchableOpacity style={styles.likeButton}>
-                <Heart size={24} color="#EF5A6F" />
+              <TouchableOpacity 
+                onPress={handleLike}
+              // style={styles.likeButton}
+              style={[styles.likeButton, isLiked && styles.likedButton]}
+              >
+                {/* <Heart size={24} color="#EF5A6F" /> */}
+                <Heart 
+                  size={24} 
+                  color={isLiked ? '#fff' : '#ff4757'} 
+                  fill={isLiked ? '#ff4757' : 'transparent'} 
+                />
                 <Text style={styles.likeButtonText}>Like</Text>
               </TouchableOpacity>
               <TouchableOpacity style={styles.messageButton}>
@@ -519,6 +565,25 @@ const styles = StyleSheet.create({
     borderRadius: 30,
     paddingVertical: 14,
     gap: 8,
+  },
+   likeButton2: {
+    // position: 'absolute',
+    // bottom: 20,
+    // right: 20,
+    // backgroundColor: 'white',
+    // width: 50,
+    // height: 50,
+    // borderRadius: 25,
+    // justifyContent: 'center',
+    // alignItems: 'center',
+    // shadowColor: '#000',
+    // shadowOffset: { width: 0, height: 2 },
+    // shadowOpacity: 0.25,
+    // shadowRadius: 3.84,
+    // elevation: 5,
+  },
+  likedButton: {
+    backgroundColor: '#ffebee',
   },
   likeButtonText: {
     fontSize: 16,
