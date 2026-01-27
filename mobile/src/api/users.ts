@@ -7,10 +7,12 @@ export type NearbyUser = {
   fullname: string;
   gender: string;
   bio: string;
-  age: number;
-  distance_km: number;
+  age?: number;
+  distance_km?: number;
   photo_url?: string;
   is_primary?: boolean;
+  location?:any;
+  interests?: string[];
 };
 
 export const fetchNearbyUsers = async (
@@ -25,13 +27,6 @@ export const fetchNearbyUsers = async (
       longitude:'longitude',
       distanceKm:'distanceKm'
     })
-    console.log(userId,'userId')
-        console.log(latitude,'latitude')
-
-            console.log(longitude,'longitude')
-
-                console.log(distanceKm,'distanceKm')
-
   // const { data, error } = await supabase.rpc('get_nearby_users', {
   //   user_id: userId,
   //   user_lat: latitude,
@@ -173,3 +168,35 @@ export async function uploadToSupabase(imageUri: string, slotId: number, userId:
     throw error;
   }
 }
+
+// Add this function to your users.ts file
+export const fetchUserById = async (userId: string): Promise<NearbyUser | null> => {
+  const { data, error } = await supabase
+    .from('profiles')  // or whatever your users table is called
+    .select(`
+      id,
+      username,
+      fullname,
+      gender,
+      bio,
+      interests,
+      location,
+      photos:profile_gallary(photo_url, is_primary)
+    `)
+    .eq('id', userId)
+    .single();
+
+  if (error) {
+    console.error('Error fetching user:', error);
+    return null;
+  }
+
+  // Format the data to match your NearbyUser type
+  const primaryPhoto = data.photos?.find((p: any) => p.is_primary) || data.photos?.[0];
+  
+  return {
+    ...data,
+    photo_url: primaryPhoto?.photo_url,
+    // distance_km: 0 // This might not be relevant for a single user view
+  };
+};

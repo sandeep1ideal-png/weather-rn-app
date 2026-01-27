@@ -15,10 +15,26 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { Bell, Search, Sliders, MapPin, X } from "lucide-react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
+import { setSelectedUser } from "@/src/api/userData";
+// import { setSelectedUser } from "../userData";
 import { useNearbyUsers } from "@/src/hooks/useNearbyUsers";
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get("window");
 const SWIPE_THRESHOLD = 120;
+
+type Profile1 = {
+  id: number;
+  name: string;
+  age: number;
+  distance: string;
+  location: string;
+  images: string[];
+  bio: string;
+  interests: string[];
+};
+type Photo = {
+  url: string;
+};
 
 type Profile = {
   id: number;
@@ -26,12 +42,14 @@ type Profile = {
   age: number;
   distance: string;
   location: string;
-  photos: string[];
+  photos: Photo[];
+  images: string[];
+
   bio: string;
   interests: string[];
 };
 
-const profiles1: Profile[] = [
+const profiles: Profile[] = [
   {
     id: 1,
     name: "Sephia",
@@ -39,8 +57,16 @@ const profiles1: Profile[] = [
     distance: "3.2 km away",
     location: "New York",
     photos: [
-      "https://photos.unsplash.com/photo-1494790108377-be9c29b29330?w=800",
-      "https://photos.unsplash.com/photo-1524504388940-b1c1722653e1?w=800",
+      {
+        url: "https://photos.unsplash.com/photo-1494790108377-be9c29b29330?w=800",
+      },
+      {
+        url: "https://photos.unsplash.com/photo-1524504388940-b1c1722653e1?w=800",
+      },
+    ],
+    images: [
+      "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=800",
+      "https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=800",
     ],
     bio: "Adventure seeker | Coffee lover ☕ | Love to travel and explore new places 🌍",
     interests: ["Music", "Dance", "Cooking", "Kids"],
@@ -52,8 +78,16 @@ const profiles1: Profile[] = [
     distance: "5.1 km away",
     location: "Brooklyn",
     photos: [
-      "https://photos.unsplash.com/photo-1529626455594-4ff0802cfb7e?w=800",
-      "https://photos.unsplash.com/photo-1488426862026-3ee34a7d66df?w=800",
+      {
+        url: "https://photos.unsplash.com/photo-1529626455594-4ff0802cfb7e?w=800",
+      },
+      {
+        url: "https://photos.unsplash.com/photo-1488426862026-3ee34a7d66df?w=800",
+      },
+    ],
+    images: [
+      "https://images.unsplash.com/photo-1529626455594-4ff0802cfb7e?w=800",
+      "https://images.unsplash.com/photo-1488426862026-3ee34a7d66df?w=800",
     ],
     bio: "Yoga instructor 🧘‍♀️ | Nature lover | Looking for genuine connections",
     interests: ["Yoga", "Travel", "Photography", "Cooking"],
@@ -65,8 +99,16 @@ const profiles1: Profile[] = [
     distance: "2.8 km away",
     location: "Manhattan",
     photos: [
-      "https://photos.unsplash.com/photo-1534528741775-53994a69daeb?w=800",
-      "https://photos.unsplash.com/photo-1517841905240-472988babdf9?w=800",
+      {
+        url: "https://photos.unsplash.com/photo-1534528741775-53994a69daeb?w=800",
+      },
+      {
+        url: "https://photos.unsplash.com/photo-1517841905240-472988babdf9?w=800",
+      },
+    ],
+    images: [
+      "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=800",
+      "https://images.unsplash.com/photo-1517841905240-472988babdf9?w=800",
     ],
     bio: "Artist & Designer | Dog mom 🐕 | Wine enthusiast 🍷",
     interests: ["Art", "Design", "Wine", "Dogs"],
@@ -78,15 +120,16 @@ export default function HomeScreen() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [showProfile, setShowProfile] = useState(false);
   const [showMatch, setShowMatch] = useState(false);
-  const [matchedProfile, setMatchedProfile]:any = useState<Profile | null>(null);
+  const [matchedProfile, setMatchedProfile]: any = useState<Profile | null>(
+    null,
+  );
 
   const position = useRef(new Animated.ValueXY()).current;
-    const { users, isLoading, error} = useNearbyUsers(10);
-    console.log('users', users);
+  const { users: profiles, isLoading, error } = useNearbyUsers(10);
+  console.log("users", profiles);
 
-    const profiles:any  = users.filter((m:any) => m.photos?.length>0);
+  // const profiles:any  = users.filter((m:any) => m.photos?.length>0);
 
-  
   const rotation = position.x.interpolate({
     inputRange: [-SCREEN_WIDTH / 2, 0, SCREEN_WIDTH / 2],
     outputRange: ["-10deg", "0deg", "10deg"],
@@ -112,7 +155,7 @@ export default function HomeScreen() {
         [null, { dx: position.x, dy: position.y }],
         {
           useNativeDriver: false,
-        }
+        },
       ),
       onPanResponderRelease: (_, gesture) => {
         if (gesture.dx > SWIPE_THRESHOLD) {
@@ -126,7 +169,7 @@ export default function HomeScreen() {
           }).start();
         }
       },
-    })
+    }),
   ).current;
 
   const swipeRight = () => {
@@ -154,8 +197,8 @@ export default function HomeScreen() {
     setCurrentIndex((prev) => (prev + 1) % profiles.length);
   };
 
-  const currentProfile = profiles[currentIndex];
-  if(isLoading) {
+  const currentProfile: any = profiles[currentIndex];
+  if (isLoading) {
     return (
       <SafeAreaView style={styles.container}>
         <Text>Loading...</Text>
@@ -170,7 +213,7 @@ export default function HomeScreen() {
         <View style={styles.matchInfo}>
           <Image
             source={{
-              uri: "https://photos.unsplash.com/photo-1500648767791-00dcc994a43e?w=100",
+              uri: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100",
             }}
             style={styles.matchAvatar}
           />
@@ -200,46 +243,76 @@ export default function HomeScreen() {
 
       {/* Profile Cards */}
       <View style={styles.cardContainer}>
-        {profiles.map((profile, index) => {
-          if (index < currentIndex) return null;
-          if (index === currentIndex) {
+        {profiles
+          .slice(currentIndex)
+          .reverse()
+          .map((profile: any, reversedIndex) => {
+            const index = profiles.length - 1 - reversedIndex + currentIndex;
+            const actualIndex =
+              currentIndex +
+              (profiles.slice(currentIndex).length - 1 - reversedIndex);
+            const isTopCard = actualIndex === currentIndex;
+
+            if (actualIndex > currentIndex + 1) return null; // Only show current and next card
+
             return (
               <Animated.View
                 key={profile.id}
                 style={[
                   styles.card,
                   {
-                    transform: [
-                      { translateX: position.x },
-                      { translateY: position.y },
-                      { rotate: rotation },
-                    ],
+                    zIndex: isTopCard ? 10 : 1,
+                    transform: isTopCard
+                      ? [
+                          { translateX: position.x },
+                          { translateY: position.y },
+                          { rotate: rotation },
+                        ]
+                      : [{ scale: 0.95 }],
+                    opacity: isTopCard ? 1 : 0.8,
                   },
                 ]}
-                {...panResponder.panHandlers}
+                pointerEvents={isTopCard ? "auto" : "none"}
+                {...(isTopCard ? panResponder.panHandlers : {})}
               >
-                <Image
-                  source={{ uri: profile?.photos[0]?.url }}
+                {/* <Image
+                  source={{ uri: profile.photos[0].url }}
                   style={styles.cardImage}
-                />
-
-                {/* NOPE Overlay */}
-                <Animated.View
-                  style={[styles.nopeOverlay, { opacity: nopeOpacity }]}
+                /> */}
+                <TouchableOpacity
+                  activeOpacity={1}
+                  onPress={() => {
+                    // setSelectedUser(profile); // Set the selected user data
+                    router.push(`/details/${profile.id}`); // Navigate to details page
+                  }}
                 >
-                  <View style={styles.nopeLabel}>
-                    <Text style={styles.nopeLabelText}>NOPE</Text>
-                  </View>
-                </Animated.View>
+                  <Image
+                    source={{ uri: profile.photos[0].url }}
+                    style={styles.cardImage}
+                  />
+                </TouchableOpacity>
 
-                {/* LIKE Overlay */}
-                <Animated.View
-                  style={[styles.likeOverlay, { opacity: likeOpacity }]}
-                >
-                  <View style={styles.likeLabel}>
-                    <Text style={styles.likeLabelText}>LIKE</Text>
-                  </View>
-                </Animated.View>
+                {isTopCard && (
+                  <>
+                    {/* NOPE Overlay */}
+                    <Animated.View
+                      style={[styles.nopeOverlay, { opacity: nopeOpacity }]}
+                    >
+                      <View style={styles.nopeLabel}>
+                        <Text style={styles.nopeLabelText}>NOPE</Text>
+                      </View>
+                    </Animated.View>
+
+                    {/* LIKE Overlay */}
+                    <Animated.View
+                      style={[styles.likeOverlay, { opacity: likeOpacity }]}
+                    >
+                      <View style={styles.likeLabel}>
+                        <Text style={styles.likeLabelText}>LIKE</Text>
+                      </View>
+                    </Animated.View>
+                  </>
+                )}
 
                 <LinearGradient
                   colors={["transparent", "rgba(0,0,0,0.8)"]}
@@ -248,24 +321,31 @@ export default function HomeScreen() {
                   <View style={styles.cardInfo}>
                     <View style={styles.profileHeader}>
                       <Image
-                        source={{ uri: profile?.photos[0]?.url }}
+                        source={{ uri: profile.photos[0].url }}
                         style={styles.smallAvatar}
                       />
-                      <View style={styles.nameContainer}>
+                      {/* <View style={styles.nameContainer}> */}
+                      <TouchableOpacity
+                        activeOpacity={1}
+                        onPress={() => {
+                          setSelectedUser(profile); // Set the selected user data
+                          router.push(`/details/${profile.id}`); // Navigate to details page
+                        }}
+                        style={styles.nameContainer}
+                      >
                         <Text style={styles.name}>
-                          {profile.name}, {profile.age}
+                          {profile.username}, {profile.age}
                         </Text>
                         <View style={styles.locationRow}>
                           <MapPin size={16} color="#FFFFFF" />
-                          <Text style={styles.location}>
-                            {profile.location}
-                          </Text>
+                          <Text style={styles.location}>{profile.gender}</Text>
                           <Text style={styles.distance}>
-                            {profile.distance}
+                            {profile.distance_km}
                           </Text>
                         </View>
-                      </View>
+                      </TouchableOpacity>
                     </View>
+                    {/* </View> */}
 
                     <View style={styles.interestsRow}>
                       {/* {profile?.interests?.map((interest, idx) => (
@@ -273,9 +353,9 @@ export default function HomeScreen() {
                           <Text style={styles.interestText}>{interest}</Text>
                         </View>
                       ))} */}
-                       <View  style={styles.interestChip}>
-                          <Text style={styles.interestText}>{`interest`}</Text>
-                        </View>
+                      <View style={styles.interestChip}>
+                        <Text style={styles.interestText}>{`interest`}</Text>
+                      </View>
                       <TouchableOpacity
                         style={styles.moreButton}
                         onPress={() => setShowProfile(true)}
@@ -287,17 +367,7 @@ export default function HomeScreen() {
                 </LinearGradient>
               </Animated.View>
             );
-          }
-
-          return (
-            <View key={profile.id} style={[styles.card, styles.nextCard]}>
-              <Image
-                source={{ uri: profile?.photos[0]?.url }}
-                style={styles.cardImage}
-              />
-            </View>
-          );
-        })}
+          })}
       </View>
 
       {/* Profile Detail Modal */}
@@ -313,25 +383,25 @@ export default function HomeScreen() {
 
             <ScrollView showsVerticalScrollIndicator={false}>
               <Image
-                source={{ uri: currentProfile?.photos[0]?.url }}
+                source={{ uri: currentProfile.photos[0].url }}
                 style={styles.modalImage}
               />
 
               <View style={styles.modalContent}>
                 <Text style={styles.modalName}>
-                  {currentProfile?.name}, {currentProfile?.age}
+                  {currentProfile.name}, {currentProfile.age}
                 </Text>
 
                 <View style={styles.modalLocationRow}>
                   <MapPin size={20} color="#6B7280" />
                   <Text style={styles.modalLocation}>
-                    {currentProfile?.location} • {currentProfile?.distance}
+                    {currentProfile.location} • {currentProfile.distance}
                   </Text>
                 </View>
 
                 <View style={styles.section}>
                   <Text style={styles.sectionTitle}>About</Text>
-                  <Text style={styles.bioText}>{currentProfile?.bio}</Text>
+                  <Text style={styles.bioText}>{currentProfile.bio}</Text>
                 </View>
 
                 <View style={styles.section}>
@@ -365,7 +435,7 @@ export default function HomeScreen() {
             <View style={styles.matchAvatars}>
               <Image
                 source={{
-                  uri: "https://photos.unsplash.com/photo-1500648767791-00dcc994a43e?w=200",
+                  uri: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=200",
                 }}
                 style={styles.matchAvatar1}
               />
@@ -373,7 +443,7 @@ export default function HomeScreen() {
                 <Text style={styles.heartEmoji}>💕</Text>
               </View>
               <Image
-                source={{ uri: matchedProfile?.photos[0]?.url }}
+                source={{ uri: matchedProfile?.photos[0].url }}
                 style={styles.matchAvatar2}
               />
             </View>
@@ -491,10 +561,6 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.15,
     shadowRadius: 12,
     elevation: 8,
-  },
-  nextCard: {
-    transform: [{ scale: 0.95 }],
-    opacity: 0.8,
   },
   cardImage: {
     width: "100%",

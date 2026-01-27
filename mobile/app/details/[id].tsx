@@ -32,6 +32,7 @@ import Animated, {
   withTiming,
   runOnJS,
 } from "react-native-reanimated";
+import { fetchUserById } from '@/src/api/users';
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 const CARD_WIDTH = SCREEN_WIDTH * 0.7;
@@ -49,36 +50,64 @@ export default function DetailsScreen() {
   const translateX = useSharedValue(0);
 
 
-  useEffect(() => {
-    if (!id) return;
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-    // Example API call
-    // fetch(`https://api.example.com/item/${id}`)
-    //   .then(res => res.json())
-    //   .then(setData)
-    //   .catch(console.error);
+
+
+// id: string;
+//   username: string;
+//   fullname: string;
+//   gender: string;
+//   bio: string;
+//   age?: number;
+//   distance_km?: number;
+//   photo_url?: string;
+//   is_primary?: boolean;
+//   interests?: string[];
+   useEffect(() => {
+    const loadUserData = async () => {
+      if (!id) {
+        setError('No user ID provided');
+        setIsLoading(false);
+        return;
+      }
+      try {
+        setIsLoading(true);
+        const userData = await fetchUserById(id);
+        console.log(JSON.stringify(userData))
+        if (userData) {
+          setProfileData(userData);
+  //             setProfileData( {
+  //   age: 26,
+  //   // location: "New York",
+  //   // interests: ["Travel", "Photography", "Coffee", "Hiking", "Music"],
+  //   photos: [
+  //     "https://images.unsplash.com/photo-1739133783212-e1c93795d9c7?w=900&auto=format&fit=crop&q=60",
+  //     "https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=800",
+  //     "https://images.unsplash.com/photo-1529626455594-4ff0802cfb7e?w=800",
+  //     "https://images.unsplash.com/photo-1488426862026-3ee34a7d66df?w=800",
+  //   ],
+  //   // matchPercentage: 95,
+  //   isNew: true,
+  // });
+
+        } else {
+          setError('User not found');
+        }
+      } catch (err) {
+        console.error('Error loading user data:', err);
+        setError('Failed to load user data');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    loadUserData();
   }, [id]);
 
   useEffect(() => {
     // Get the selected user from the store
-        setProfileData( {
-    id: "1",
-    name: "Emma",
-    age: 26,
-    location: "New York",
-    distance: "2 km away",
-    bio: "Adventure seeker and coffee enthusiast ☕️ Love exploring new places and trying different cuisines. Looking for someone to share life's beautiful moments with!",
-    interests: ["Travel", "Photography", "Coffee", "Hiking", "Music"],
-    photos: [
-      "https://images.unsplash.com/photo-1739133783212-e1c93795d9c7?w=900&auto=format&fit=crop&q=60",
-      "https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=800",
-      "https://images.unsplash.com/photo-1529626455594-4ff0802cfb7e?w=800",
-      "https://images.unsplash.com/photo-1488426862026-3ee34a7d66df?w=800",
-    ],
-    matchPercentage: 95,
-    isNew: true,
-  });
-
+    
   }, [id]);
  
 
@@ -123,6 +152,27 @@ export default function DetailsScreen() {
           <ActivityIndicator size="large" color="#EF5A6F" />
         </View>
       </SafeAreaView>
+    );
+  }
+    if (isLoading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#0000ff" />
+      </View>
+    );
+  }
+  if (error) {
+    return (
+      <View style={styles.errorContainer}>
+        <Text style={styles.errorText}>{error}</Text>
+      </View>
+    );
+  }
+  if (!profileData) {
+    return (
+      <View style={styles.errorContainer}>
+        <Text>No user data available</Text>
+      </View>
     );
   }
   return (
@@ -195,7 +245,7 @@ export default function DetailsScreen() {
                         ]}
                       >
                         <Image
-                          source={{ uri: photo }}
+                          source={{ uri: photo?.photo_url }}
                           style={styles.carouselImage}
                         />
                       </TouchableOpacity>
@@ -224,18 +274,18 @@ export default function DetailsScreen() {
           <View style={styles.profileCard}>
             <View style={styles.profileHeader}>
               <Image
-                source={{ uri: profileData.photos[0] }}
+                source={{ uri: profileData.photos[0]?.photo_url }}
                 style={styles.avatar}
               />
               <View style={styles.profileInfo}>
                 <Text style={styles.name}>
-                  {profileData.name}, {profileData.age}
+                  {profileData.username}, {profileData.age}
                 </Text>
                 <View style={styles.locationRow}>
                   <MapPin size={16} color="#6B7280" />
                   <Text style={styles.location}>{profileData.location}</Text>
                   <Text style={styles.separator}>|</Text>
-                  <Text style={styles.distance}>{profileData.distance}</Text>
+                  <Text style={styles.distance}>{profileData.distance_km}</Text>
                 </View>
               </View>
             </View>
@@ -260,7 +310,7 @@ export default function DetailsScreen() {
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Interests</Text>
             <View style={styles.interestsContainer}>
-              {profileData.interests.map((interest, index) => (
+              {profileData?.interests?.map((interest, index) => (
                 <View key={index} style={styles.interestChip}>
                   <Text style={styles.interestText}>{interest}</Text>
                 </View>
@@ -284,7 +334,7 @@ export default function DetailsScreen() {
                   onPress={() => setSelectedPhoto(index)}
                 >
                   <Image
-                    source={{ uri: photo }}
+                    source={{ uri: photo?.photo_url }}
                     style={styles.gridPhotoImage}
                   />
                 </TouchableOpacity>
@@ -301,6 +351,16 @@ export default function DetailsScreen() {
 }
 
 const styles = StyleSheet.create({
+   errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  errorText: {
+    color: 'red',
+    textAlign: 'center',
+  },
   container: {
     flex: 1,
     backgroundColor: "#FFFFFF",
