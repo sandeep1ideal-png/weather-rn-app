@@ -145,7 +145,7 @@ export default function SignUpScreen() {
         alert(profileError.message);
       }
 
-          await signIn(`${JSON.stringify(data)}`)
+          // await signIn1(`${JSON.stringify(data)}`)
       if (profileError) {
         console.log(profileError);
         alert(profileError.message);

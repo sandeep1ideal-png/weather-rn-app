@@ -34,9 +34,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       const token = await AsyncStorage.getItem('userToken');
       const user:any = await AsyncStorage.getItem('signupData');
-      console.log('token:', token);
-      setUserToken(token);
-      setSignupUserData(user)
+      if(token){
+        console.log('token in loadToken',token)
+        setUserToken(token);
+      }
+      // signOut()
+      if(user){
+      console.log('user k:', user);
+        setSignupUserData((user))
+      }
       return token;
     } catch (e) {
       console.error('Failed to load token', e);
@@ -50,11 +56,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     loadToken();
   }, [loadToken]);
 
-  const signIn = useCallback(async (token: string) => {
+  const signIn = useCallback(async (token: any) => {
     try {
       console.log('token:1', token);
-      await AsyncStorage.setItem('userToken', (token));
-      setUserToken(token);
+      if(token){
+        await AsyncStorage.setItem('userToken', (token));
+        
+        setUserToken(token);
+        console.log('2 token in signIn',JSON.parse(token))
+      }
     } catch (e) {
       console.error('Failed to save token', e);
       throw e;
@@ -78,8 +88,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const signUpData = useCallback(async (data: SignupData) => {
   try {
     const jsonValue = JSON.stringify(data); // ✅ convert to string
+        setSignupUserData(data); // keep object in state
+
     await AsyncStorage.setItem('signupData', jsonValue);
-    setSignupUserData(data); // keep object in state
   } catch (e) {
     console.error('Failed to save signup data', e);
     throw e;
@@ -90,6 +101,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       await AsyncStorage.removeItem('userToken');
       setUserToken(null);
+      const { error } =  await supabase.auth.signOut();
+      
     } catch (e) {
       console.error('Failed to remove token', e);
       throw e;

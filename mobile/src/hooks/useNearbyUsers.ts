@@ -6,7 +6,7 @@ import * as Location from 'expo-location';
 
 export const useNearbyUsers = (distanceKm: number = 10) => {
   const { userToken }:any = useAuth();
-  let user = JSON.parse(userToken)
+  let user = userToken?JSON.parse(userToken):{user:{id:null}}
 
   const queryClient = useQueryClient();
 

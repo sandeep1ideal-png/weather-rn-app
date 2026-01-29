@@ -1,4 +1,4 @@
-import React, { useState, useRef, useCallback } from "react";
+import React, { useState, useRef, useEffect, useCallback } from "react";
 import {
   View,
   Text,
@@ -16,7 +16,6 @@ import { Bell, Search, Sliders, MapPin, X } from "lucide-react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
 import { setSelectedUser } from "@/src/api/userData";
-// import { setSelectedUser } from "../userData";
 import { useNearbyUsers } from "@/src/hooks/useNearbyUsers";
 import { likeUser } from "@/src/api/likes";
 import { useAuth } from "@/src/context/AuthContext";
@@ -118,20 +117,62 @@ const profiles2: Profile[] = [
 ];
 
 export default function HomeScreen() {
+  const [activeUserId, setActiveUserId] = useState<any | 'kk'>(null);
   const router = useRouter();
-  const [currentIndex, setCurrentIndex] = useState(0);
   const [showProfile, setShowProfile] = useState(false);
   const [showMatch, setShowMatch] = useState(false);
   const [matchedProfile, setMatchedProfile]: any = useState<Profile | null>(
     null,
   );
+  const userRef = useRef('')
 
-  const position = useRef(new Animated.ValueXY()).current;
-  const { users: profiles, isLoading, error } = useNearbyUsers(10);
+  // Use local state instead of profiles directly from hook
+  const { users: initialProfiles, isLoading, error } = useNearbyUsers(10);
+  const [profiles, setProfiles] = useState<any[]>([]);
+  
   const {  userToken } = useAuth();
-  const {user} = JSON.parse(userToken)
+  const {user} = userToken?JSON.parse(userToken):{}
 
-  // const profiles:any  = users.filter((m:any) => m.photos?.length>0);
+  // Initialize profiles when they load
+  useEffect(() => {
+    if (initialProfiles && initialProfiles.length > 0) {
+      setProfiles(initialProfiles);
+    }
+  }, [initialProfiles]);
+
+
+  useEffect(() => {
+  if (initialProfiles && initialProfiles.length > 0) {
+    setProfiles(initialProfiles);
+    // Set the first profile as active
+    if (initialProfiles[0]?.id) {
+      // setActiveUserId(initialProfiles[0].username);
+          userRef.current = profiles[0]?.id;
+
+      console.log('initialProfiles[0].username',initialProfiles[0].username)
+    }
+  }
+}, [initialProfiles]);
+
+// Update activeUserId1 when profiles change (after swipe)
+useEffect(() => {
+  if (profiles.length > 0 && profiles[0]?.id) {
+    console.log('kkkkkkkkkkkkkkkkk',profiles.length,profiles[0]?.id)
+    userRef.current = profiles[0].id;
+  }
+}, [profiles]);
+  const position = useRef(new Animated.ValueXY()).current;
+  const currentProfile: any = profiles.length > 0 ? profiles[0] : null;
+
+  // Auto-close match modal after 2 seconds
+  useEffect(() => {
+    if (showMatch) {
+      const timer = setTimeout(() => {
+        setShowMatch(false);
+      }, 2000);
+      return () => clearTimeout(timer);
+    }
+  }, [showMatch]);
 
   const rotation = position.x.interpolate({
     inputRange: [-SCREEN_WIDTH / 2, 0, SCREEN_WIDTH / 2],
@@ -151,6 +192,61 @@ export default function HomeScreen() {
     extrapolate: "clamp",
   });
 
+  // Function to remove current card and reset animation
+  const removeCard = useCallback((liked: boolean = false, userId?: string) => {
+    console.log('Removing card:', userId, 'Liked:', liked,user.id);
+    
+    // Show match modal if liked
+    if (liked && userId) {
+      likeUser(user.id, userId)
+      .then((success) => {
+        if (success) {
+        } else {
+        }
+      })
+      .catch((error) => {
+        console.log('Error calling likeUser:', error);
+      });
+      setMatchedProfile(userId);
+      setShowMatch(true);
+    }
+    
+    // Reset animation position
+    position.setValue({ x: 0, y: 0 });
+    
+    // Remove first profile from array
+    setProfiles((prevProfiles) => {
+      const newProfiles = prevProfiles.slice(1);
+      console.log('Profiles remaining:', newProfiles.length);
+      return newProfiles;
+    });
+  }, [currentProfile, position]);
+  const removeCardNew = useCallback((liked: boolean = false) => {
+  
+  // Call like API if liked
+  if (liked && activeUserId && user?.id) {
+    
+    // Call the API
+    likeUser(user.id, activeUserId)
+      .then((success) => {
+        if (success) {
+        } else {
+        }
+      })
+      .catch((error) => {
+        console.error('Error calling likeUser:', error);
+      });
+
+    // Show match modal
+    if (currentProfile) {
+      setMatchedProfile(currentProfile);
+      setShowMatch(true);
+    }
+  }
+  
+  // Remove profile from array...
+}, [currentProfile, activeUserId, user?.id, position]);
+
   const panResponder = useRef(
     PanResponder.create({
       onStartShouldSetPanResponder: () => true,
@@ -158,104 +254,79 @@ export default function HomeScreen() {
         [null, { dx: position.x, dy: position.y }],
         {
           useNativeDriver: false,
-        },
+        }
       ),
-      // onPanResponderRelease: (_, gesture) => {
-      //   if (gesture.dx > SWIPE_THRESHOLD) {
-      //       console.log('if kkkkkkkkkkkkkkkkkkkkkk')
-      //     swipeRight();
-      //   } else if (gesture.dx < -SWIPE_THRESHOLD) {
-      //               console.log('else kkkkkkkkkkkkkkkkkkkkkk')
-
-      //     swipeLeft();
-      //   } else {
-      //     Animated.spring(position, {
-      //       toValue: { x: 0, y: 0 },
-      //       useNativeDriver: false,
-      //     }).start();
-      //   }
-      // },
-      onPanResponderRelease: async (_, gesture) => {
-  if (gesture.dx > SWIPE_THRESHOLD) {
-    console.log('Swiping right - Liking user');
-    await swipeRight();
-  } else if (gesture.dx < -SWIPE_THRESHOLD) {
-    console.log('Swiping left');
-    swipeLeft();
-  } else {
-    Animated.spring(position, {
-      toValue: { x: 0, y: 0 },
-      friction: 4,
-      useNativeDriver: false,
-    }).start();
-  }
-}
+      onPanResponderRelease: (_, gesture) => {
+        const currentUserId = userRef.current;
+        if (gesture.dx > SWIPE_THRESHOLD) {
+          console.log('Starting right swipe with:', currentUserId);
+          swipeRight(currentUserId);        
+        } else if (gesture.dx < -SWIPE_THRESHOLD) {
+          swipeLeft(currentUserId);
+        } else {
+          Animated.spring(position, {
+            toValue: { x: 0, y: 0 },
+            friction: 4,
+            useNativeDriver: false,
+          }).start();
+        }
+      }
     }),
   ).current;
+const swipeRight = (userId: string | null) => {
+    try {
+      console.log('swipeRight triggered:', userId);
 
-  const swipeRight1 = () => {
-    Animated.timing(position, {
-      toValue: { x: SCREEN_WIDTH + 100, y: 0 },
-      duration: 300,
-      useNativeDriver: false,
-    }).start(async () => {
-      const success = await likeUser(user.id,currentProfile.id);
-      if (success) {
-        // Show some feedback for like
-        console.log('Liked user:', currentProfile.name);
-      }
-
-      setMatchedProfile(profiles[currentIndex]);
-      setShowMatch(true);
-      nextCard();
-    });
-  };
-    const currentProfile: any = profiles[currentIndex];
-
-const swipeRight = useCallback(async () => {
-  // if (!currentProfile || !user?.id) return;
-
-  try {
-    console.log('Liked user:profiles1[currentIndex]', currentIndex);
-   console.log(JSON.stringify(profiles))
-    // const success =  likeUser(user.id, currentProfile.id);
-    // if (success) {
-    // } else {
-    //   console.error('Failed to like user');
-    //   return;
-    // }
-
-    Animated.timing(position, {
-      toValue: { x: SCREEN_WIDTH + 100, y: 0 },
-      duration: 300,
-      useNativeDriver: false,
-    }).start(() => {
-      setMatchedProfile(profiles[currentIndex]);
-      setShowMatch(true);
-      nextCard();
-    });
-  } catch (error) {
-    console.error('Error in swipeRight:', error);
-  }
-}, []);
-// currentProfile, currentIndex, profiles1, user?.id
-  const swipeLeft = () => {
-    Animated.timing(position, {
-      toValue: { x: -SCREEN_WIDTH - 100, y: 0 },
-      duration: 300,
-      useNativeDriver: false,
-    }).start(() => nextCard());
+      Animated.timing(position, {
+        toValue: { x: SCREEN_WIDTH + 100, y: 0 },
+        duration: 300,
+        useNativeDriver: false,
+      }).start(({ finished }) => {
+        if (finished) {
+          console.log('Swipe right animation finished',userId);
+          removeCard(true, userId); // true = liked
+        }
+      });
+    } catch (error) {
+      console.error('Error in swipeRight:', error);
+    }
   };
 
-  const nextCard = () => {
-    position.setValue({ x: 0, y: 0 });
-    setCurrentIndex((prev) => (prev + 1) % profiles.length);
+  const swipeLeft = (userId: string | null) => {
+    try {
+      // console.log('swipeLeft triggered:', currentProfile?.username);
+
+      Animated.timing(position, {
+        toValue: { x: -SCREEN_WIDTH - 100, y: 0 },
+        duration: 300,
+        useNativeDriver: false,
+      }).start(({ finished }) => {
+        if (finished) {
+          console.log('Swipe left animation finished', userId);
+          removeCard(false, userId); // false = not liked
+        }
+      });
+    } catch (error) {
+      console.error('Error in swipeLeft:', error);
+    }
   };
 
   if (isLoading) {
     return (
       <SafeAreaView style={styles.container}>
-        <Text>Loading...</Text>
+        <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
+          <Text style={{ fontSize: 18, color: "#6B7280" }}>Loading profiles...</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  if (!profiles || profiles.length === 0) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
+          <Text style={{ fontSize: 18, color: "#6B7280" }}>No more profiles available</Text>
+        </View>
       </SafeAreaView>
     );
   }
@@ -297,17 +368,18 @@ const swipeRight = useCallback(async () => {
 
       {/* Profile Cards */}
       <View style={styles.cardContainer}>
-        {profiles
-          .slice(currentIndex)
-          .reverse()
-          .map((profile: any, reversedIndex) => {
-            const index = profiles.length - 1 - reversedIndex + currentIndex;
-            const actualIndex =
-              currentIndex +
-              (profiles.slice(currentIndex).length - 1 - reversedIndex);
-            const isTopCard = actualIndex === currentIndex;
+        {profiles.length === 0 ? (
+          <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
+            <Text style={{ fontSize: 18, color: "#6B7280" }}>No more profiles available</Text>
+          </View>
+        ) : (
+          profiles.map((profile: any, index) => {
+            // Only show top 3 cards
+            if (index > 2) return null;
 
-            if (actualIndex > currentIndex + 1) return null; // Only show current and next card
+            const isTopCard = index === 0;
+            const hasMoreCards = profiles.length > 1;
+
 
             return (
               <Animated.View
@@ -315,29 +387,28 @@ const swipeRight = useCallback(async () => {
                 style={[
                   styles.card,
                   {
-                    zIndex: isTopCard ? 10 : 1,
+                    zIndex: 10 - index,
                     transform: isTopCard
                       ? [
                           { translateX: position.x },
                           { translateY: position.y },
                           { rotate: rotation },
                         ]
-                      : [{ scale: 0.95 }],
-                    opacity: isTopCard ? 1 : 0.8,
+                      : [
+                          { translateY: index * 12 },
+                          { scale: 1 - index * 0.04 },
+                        ],
+                    opacity: isTopCard ? 1 : 0.85 - index * 0.1,
                   },
                 ]}
-                pointerEvents={isTopCard ? "auto" : "none"}
-                {...(isTopCard ? panResponder.panHandlers : {})}
+                pointerEvents={isTopCard && hasMoreCards ? "auto" : "none"}
+                {...(isTopCard && hasMoreCards ? panResponder.panHandlers : {})}
               >
-                {/* <Image
-                  source={{ uri: profile.photos[0]?.url }}
-                  style={styles.cardImage}
-                /> */}
                 <TouchableOpacity
                   activeOpacity={1}
                   onPress={() => {
-                    // setSelectedUser(profile); // Set the selected user data
-                    // router.push(`/details/${profile.id}`); // Navigate to details page
+                    setSelectedUser(profile);
+                    router.push(`/details/${profile.id}`);
                   }}
                 >
                   <Image
@@ -378,12 +449,11 @@ const swipeRight = useCallback(async () => {
                         source={{ uri: profile.photos[0]?.url }}
                         style={styles.smallAvatar}
                       />
-                      {/* <View style={styles.nameContainer}> */}
                       <TouchableOpacity
                         activeOpacity={1}
                         onPress={() => {
-                          setSelectedUser(profile); // Set the selected user data
-                          router.push(`/details/${profile.id}`); // Navigate to details page
+                          setSelectedUser(profile);
+                          router.push(`/details/${profile.id}`);
                         }}
                         style={styles.nameContainer}
                       >
@@ -399,14 +469,8 @@ const swipeRight = useCallback(async () => {
                         </View>
                       </TouchableOpacity>
                     </View>
-                    {/* </View> */}
 
                     <View style={styles.interestsRow}>
-                      {/* {profile?.interests?.map((interest, idx) => (
-                        <View key={idx} style={styles.interestChip}>
-                          <Text style={styles.interestText}>{interest}</Text>
-                        </View>
-                      ))} */}
                       <View style={styles.interestChip}>
                         <Text style={styles.interestText}>{`interest`}</Text>
                       </View>
@@ -421,7 +485,8 @@ const swipeRight = useCallback(async () => {
                 </LinearGradient>
               </Animated.View>
             );
-          })}
+          })
+        )}
       </View>
 
       {/* Profile Detail Modal */}
@@ -437,7 +502,7 @@ const swipeRight = useCallback(async () => {
 
             <ScrollView showsVerticalScrollIndicator={false}>
               <Image
-                source={{ uri: currentProfile?.photos[0]?.url }}
+                source={{ uri: currentProfile?.photos?.[0]?.url }}
                 style={styles.modalImage}
               />
 
@@ -461,11 +526,6 @@ const swipeRight = useCallback(async () => {
                 <View style={styles.section}>
                   <Text style={styles.sectionTitle}>Interests</Text>
                   <View style={styles.modalInterests}>
-                    {/* {currentProfile?.interests.map((interest, idx) => (
-                      <View key={idx} style={styles.modalInterestChip}>
-                        <Text style={styles.modalInterestText}>{interest}</Text>
-                      </View>
-                    ))} */}
                     <View style={styles.modalInterestChip}>
                       <Text style={styles.modalInterestText}>interest</Text>
                     </View>
@@ -497,7 +557,7 @@ const swipeRight = useCallback(async () => {
                 <Text style={styles.heartEmoji}>💕</Text>
               </View>
               <Image
-                source={{ uri: matchedProfile?.photos[0]?.url }}
+                source={{ uri: matchedProfile?.photos?.[0]?.url }}
                 style={styles.matchAvatar2}
               />
             </View>
@@ -569,6 +629,15 @@ const styles = StyleSheet.create({
     color: "#FFFFFF",
     fontSize: 12,
     fontWeight: "600",
+  },
+  counterContainer: {
+    alignItems: "center",
+    paddingVertical: 8,
+  },
+  counterText: {
+    fontSize: 14,
+    color: "#6B7280",
+    fontWeight: "500",
   },
   searchContainer: {
     flexDirection: "row",

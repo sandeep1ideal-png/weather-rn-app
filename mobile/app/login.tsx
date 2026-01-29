@@ -63,6 +63,7 @@ const LoginScreen = () => {
 
       
       if (user.user?.email_confirmed_at) {
+        console.log(1,'signIn')
         await signIn(`${JSON.stringify(user)}`);
 
       }

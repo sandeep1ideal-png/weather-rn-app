@@ -31,8 +31,11 @@ function RootLayoutNav() {
 
    useEffect(() => {
     const handleDeepLink = async (url: string) => {
+      console.log('handleDeepLink call',handleDeepLink)
+
       // Prevent duplicate processing
       if (deepLinkProcessed.current && url.includes('auth-callback')) {
+        console.log('kkkkkk return')
         return;
       }
 
@@ -64,7 +67,7 @@ function RootLayoutNav() {
 
             const { data: { session: verifySession }, error: verifyError } = await supabase.auth.getSession();
 
-            if (verifySession?.user) {
+            if (verifySession?.user && signupUserData?.userId) {
               checkVerification(verifySession?.user)
             }else{
               setIsLoading(false)
@@ -77,11 +80,11 @@ function RootLayoutNav() {
         }
       }
     };
-
     // Listen for incoming deep links (app already open)
     const unsubscribe = Linking.addEventListener('url', ({ url }) => {
       handleDeepLink(url);
     });
+   
 
     // Check for initial URL (app opened via deep link)
     Linking.getInitialURL()
@@ -94,6 +97,13 @@ function RootLayoutNav() {
 
     return () => unsubscribe.remove();
   }, [router,signupUserData,userToken]);
+  useEffect(() => {
+    if(userToken){
+      console.log('userToken dep',userToken)
+      router.replace('/(tabs)');
+    }
+  }, [userToken])
+  
 
   const checkVerification = async (user:any) => {
         const { error: profileError } = await supabase.from("profiles").insert({
@@ -115,7 +125,7 @@ function RootLayoutNav() {
         }else{
           setIsLoading(false)
           // await signIn(`${signupUserData}`);
-          await signIn(`${user}`)
+          await signIn(`${JSON.stringify(user)}`)
         }
   
         if (profileError) {
@@ -144,17 +154,17 @@ function RootLayoutNav() {
           console.log('✅ SIGNED_IN');
 
           if (session?.user?.email_confirmed_at) {
-            console.log('✅ Email verified');
+            // console.log('✅ Email verified');
 
             // Create profile from signup data
             const signupData = await AsyncStorage.getItem('signupData');
             if (signupData) {
-              const parsedData = JSON.parse(signupData);
+              // const parsedData = JSON.parse(signupData);
               // await createProfileFromSignupData(session.user, parsedData);
-              await AsyncStorage.removeItem('signupData');
+              // await AsyncStorage.removeItem('signupData');
             }
-
-            router.replace('/(tabs)');
+            console.log(3, 'redirect on tabs after login kkkkkkkkkkkkkk')
+            // router.replace('/(tabs)');k
           } else {
             console.log('⏳ Email not verified');
             // router.replace('/');
@@ -162,22 +172,22 @@ function RootLayoutNav() {
         }
 
         // ✅ USER_UPDATED - Email verified (deep link)
-        if (event === 'USER_UPDATED') {
-          console.log('🔄 USER_UPDATED');
+        // if (event === 'USER_UPDATED') {
+        //   console.log('🔄 USER_UPDATED');
 
-          if (session?.user?.email_confirmed_at) {
-            console.log('✅ Email verified');
+        //   if (session?.user?.email_confirmed_at) {
+        //     console.log('✅ Email verified');
 
-            const signupData = await AsyncStorage.getItem('signupData');
-            if (signupData) {
-              const parsedData = JSON.parse(signupData);
-              // await createProfileFromSignupData(session.user, parsedData);
-              await AsyncStorage.removeItem('signupData');
-            }
+        //     const signupData = await AsyncStorage.getItem('signupData');
+        //     if (signupData) {
+        //       // const parsedData = JSON.parse(signupData);
+        //       // await createProfileFromSignupData(session.user, parsedData);
+        //       await AsyncStorage.removeItem('signupData');
+        //     }
 
-            router.replace('/(tabs)');
-          }
-        }
+        //     // router.replace('/(tabs)');
+        //   }
+        // }
 
         // ✅ SIGNED_OUT - User logged out
         if (event === 'SIGNED_OUT') {

@@ -11,7 +11,7 @@ const ProfileScreen = () => {
   const { signOut, signUpData } = useAuth();
 
   const handleLogout = async () => {
-        const { error } =  await supabase.auth.signOut();
+        // const { error } =  await supabase.auth.signOut();
 
     signUpData({})
     signOut();
