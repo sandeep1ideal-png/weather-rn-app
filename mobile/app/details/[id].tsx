@@ -47,7 +47,7 @@ export default function DetailsScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const [data, setData] = useState<any>(null);
   const {  userToken } = useAuth();
-  const {user} = JSON.parse(userToken)
+  const {user} = userToken?JSON.parse(userToken):{user:{id:null}}
 
   console.log('userToken.user',user.id)
 

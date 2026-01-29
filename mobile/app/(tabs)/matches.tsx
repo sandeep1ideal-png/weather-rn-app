@@ -6,12 +6,13 @@ import {
   TouchableOpacity,
   Image,
   Dimensions,
+  StyleSheet
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Heart, MessageCircle, X } from "lucide-react-native";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { useRouter } from "expo-router";
-import { useNearbyUsers } from "@/src/hooks/useNearbyUsers";
+import { useMatches } from '../../src/hooks/useMatches';
 
 const { width } = Dimensions.get("window");
 const CARD_WIDTH = (width - 48) / 2; // 2 columns with padding
@@ -24,6 +25,7 @@ type Match = {
   matchPercentage: number;
   distance: string;
   isNew: boolean;
+  username?:string
 };
 
 const matchesData: Match[] = [
@@ -90,11 +92,13 @@ const matchesData: Match[] = [
 ];
 
 export default function MatchesScreen() {
-  const router = useRouter();
-  const [matches, setMatches] = useState<Match[]>(matchesData);
+  const { data: matches = [], isLoading, error }:any = useMatches();
+  console.log(error)
 
-  const newMatches = matches.filter((m) => m.isNew);
-  const allMatches = matches.filter((m) => !m.isNew);
+  const router = useRouter();
+  const [mymatches, setMatches] = useState<Match[]>(matchesData);
+
+ 
 
   const handleRemoveMatch = (id: string) => {
     setMatches(matches.filter((m) => m.id !== id));
@@ -102,7 +106,7 @@ export default function MatchesScreen() {
   // const { users, isLoading, error} = useNearbyUsers(10);
   // console.log('users', users);
 
-  const MatchCard = ({ match }: { match: Match }) => (
+  const MatchCard = ({ match }: { match: any }) => (
     <View style={{ width: CARD_WIDTH, marginBottom: 16 }}>
       <View className="bg-white rounded-2xl overflow-hidden shadow-sm">
         {/* Image */}
@@ -113,7 +117,7 @@ export default function MatchesScreen() {
         >
           <View className="relative">
             <Image
-              source={{ uri: match.image }}
+              source={{ uri: match?.user?.photo_url }}
               style={{ width: "100%", height: 200 }}
               resizeMode="cover"
             />
@@ -121,7 +125,7 @@ export default function MatchesScreen() {
             {/* Match Percentage Badge */}
             <View className="absolute top-3 right-3 bg-white/95 rounded-full px-3 py-1">
               <Text className="text-xs font-bold" style={{ color: "#EF5A6F" }}>
-                {match.matchPercentage}% Match
+                {match.matchPercentage?match.matchPercentage:100}% Match
               </Text>
             </View>
 
@@ -144,10 +148,10 @@ export default function MatchesScreen() {
               onPress={() => router.push(`/details/${2}`)}
             >
               <Text className="text-white font-bold text-lg">
-                {match.name}, {match.age}
+                {match?.user1?.username}, {match?.user1?.age?match?.user1?.age:`*18`}
               </Text>
               <Text className="text-white/90 text-xs mt-0.5">
-                {match.distance}
+                {match.distance?match.distance:'2km'}
               </Text>
             </TouchableOpacity>
           </View>
@@ -176,7 +180,30 @@ export default function MatchesScreen() {
       </View>
     </View>
   );
-
+if (isLoading) {
+    return (
+      <View style={styles.container}>
+        <Text>Loading matches...</Text>
+      </View>
+    );
+  }
+  if (error) {
+    return (
+      <View style={styles.container}>
+        <Text>Error loading matches: {error.message}</Text>
+      </View>
+    );
+  }
+  if (matches.length === 0) {
+    return (
+      <View style={styles.container}>
+        <Text>No matches yet. Keep swiping!</Text>
+      </View>
+    );
+  }
+   const newMatches = matches.filter((m) => m.isNew);
+  const allMatches = matches.filter((m) => !m.isNew);
+  console.log(JSON.stringify(allMatches))
   return (
     <SafeAreaView className="flex-1 bg-gray-50">
       {/* Header */}
@@ -255,3 +282,39 @@ export default function MatchesScreen() {
     </SafeAreaView>
   );
 }
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    padding: 16,
+    backgroundColor: '#fff',
+    alignItems: 'center',
+    justifyContent:'center'
+  },
+  title: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    marginBottom: 20,
+  },
+  matchCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 15,
+    marginBottom: 10,
+    backgroundColor: '#f8f8f8',
+    borderRadius: 10,
+  },
+  avatar: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    marginRight: 15,
+  },
+  matchInfo: {
+    flex: 1,
+  },
+  name: {
+    fontSize: 18,
+    fontWeight: '600',
+    marginBottom: 5,
+  },
+});

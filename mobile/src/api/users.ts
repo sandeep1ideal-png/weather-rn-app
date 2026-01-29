@@ -41,7 +41,6 @@ export const fetchNearbyUsers = async (
   user_lng: longitude,
   max_distance_km: distanceKm || 10  // Ensure it's not 0
 });
-console.log('Debug results:', JSON.stringify(data, null, 2));
 
   if (error) {
     console.log('Error fetching nearby users:', error);
