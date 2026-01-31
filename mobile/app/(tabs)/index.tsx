@@ -408,7 +408,7 @@ const swipeRight = (userId: string | null) => {
                   activeOpacity={1}
                   onPress={() => {
                     setSelectedUser(profile);
-                    router.push(`/details/${profile.id}`);
+                    // router.push(`/details/${profile.id}`);
                   }}
                 >
                   <Image
@@ -472,7 +472,7 @@ const swipeRight = (userId: string | null) => {
 
                     <View style={styles.interestsRow}>
                       <View style={styles.interestChip}>
-                        <Text style={styles.interestText}>{`interest`}</Text>
+                        <Text style={styles.interestText}>{`Dance`}</Text>
                       </View>
                       <TouchableOpacity
                         style={styles.moreButton}
@@ -508,13 +508,14 @@ const swipeRight = (userId: string | null) => {
 
               <View style={styles.modalContent}>
                 <Text style={styles.modalName}>
-                  {currentProfile?.name}, {currentProfile?.age}
+                  {currentProfile?.username}
+                  {/* , {currentProfile?.age} */}
                 </Text>
 
                 <View style={styles.modalLocationRow}>
                   <MapPin size={20} color="#6B7280" />
                   <Text style={styles.modalLocation}>
-                    {currentProfile?.location} • {currentProfile?.distance}
+                     {currentProfile.gender}
                   </Text>
                 </View>
 
@@ -527,7 +528,7 @@ const swipeRight = (userId: string | null) => {
                   <Text style={styles.sectionTitle}>Interests</Text>
                   <View style={styles.modalInterests}>
                     <View style={styles.modalInterestChip}>
-                      <Text style={styles.modalInterestText}>interest</Text>
+                      <Text style={styles.modalInterestText}>Dance</Text>
                     </View>
                   </View>
                 </View>

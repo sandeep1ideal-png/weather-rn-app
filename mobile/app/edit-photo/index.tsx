@@ -106,7 +106,7 @@ export default function EditPhoto() {
     // await savePhotosToDatabase(photos);
     
     Alert.alert('Success', `${uploadedCount} photo(s) uploaded successfully!`, [
-      { text: 'OK', onPress: () => router.back() }
+      { text: 'OK', onPress: () => router.replace('/(tabs)') }
     ]);
   };
 
